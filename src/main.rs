@@ -1,5 +1,5 @@
-use tlq::say_hello;
+use tlq::types::Message;
 
 fn main() {
-    println!("{}", say_hello("world"));
+    println!("{:?}", Message::new("Hello world".to_string()));
 }
