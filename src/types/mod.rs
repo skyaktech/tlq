@@ -1,6 +1,5 @@
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use std::error::Error;
 use uuid::Uuid;
 
 /// Represents the current state of a message in the queue
@@ -67,7 +66,7 @@ impl Message {
 pub trait Storage {
     async fn add(&mut self, msg: Message) -> Result<(), String>;
     async fn get(&mut self, count: usize) -> Result<Vec<Message>, String>;
-    async fn delete(&mut self, id: String) -> Result<(), String>;
+    async fn delete(&mut self, ids: Vec<String>) -> Result<(), String>;
     async fn purge(&mut self) -> Result<(), String>;
     async fn retry(&mut self, id: String) -> Result<(), String>;
 }

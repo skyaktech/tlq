@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use crate::types::{Message, Storage};
 use async_trait::async_trait;
 
@@ -20,9 +21,10 @@ impl Storage for InMemoryStorage {
         Ok(messages)
     }
 
-    async fn delete(&mut self, id: String) -> Result<(), String> {
-        // remove message from in_flight
-        todo!()
+    async fn delete(&mut self, ids: Vec<String>) -> Result<(), String> {
+        let id_set : HashSet<&String> = ids.iter().collect();
+        self.in_flight.retain(|msg| !id_set.contains(&msg.id.to_string()));
+        Ok(())
     }
 
     async fn purge(&mut self) -> Result<(), String> {
@@ -30,7 +32,7 @@ impl Storage for InMemoryStorage {
         todo!()
     }
 
-    async fn retry(&mut self, id: String) -> Result<(), String> {
+    async fn retry(&mut self, _id: String) -> Result<(), String> {
         // move message from in_flight back to queue, increment retry_count
         todo!()
     }
@@ -81,5 +83,32 @@ mod tests {
         assert_eq!(messages.len(), 3);
         assert_eq!(storage.queue.len(), 0);
         assert_eq!(storage.in_flight.len(), 3);
+    }
+
+    #[tokio::test]
+    async fn test_in_memory_storage_delete() {
+        let mut storage = setup_storage();
+
+        let messages = storage.get(2).await.unwrap();
+        storage.delete(vec![messages[0].id.to_string(), messages[1].id.to_string()]).await.unwrap();
+        assert_eq!(storage.in_flight.len(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_in_memory_storage_delete_non_existent() {
+        let mut storage = setup_storage();
+
+        let _messages = storage.get(2).await.unwrap();
+        storage.delete(vec!["non-existent-id".to_string()]).await.unwrap();
+        assert_eq!(storage.in_flight.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn test_in_memory_storage_delete_duplicate() {
+        let mut storage = setup_storage();
+
+        let messages = storage.get(2).await.unwrap();
+        storage.delete(vec![messages[0].id.to_string(), messages[0].id.to_string()]).await.unwrap();
+        assert_eq!(storage.in_flight.len(), 1);
     }
 }
