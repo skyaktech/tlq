@@ -1,6 +1,6 @@
-use std::collections::HashSet;
 use crate::types::{Message, Storage};
 use async_trait::async_trait;
+use std::collections::HashSet;
 
 pub struct InMemoryStorage {
     queue: Vec<Message>,
@@ -22,8 +22,9 @@ impl Storage for InMemoryStorage {
     }
 
     async fn delete(&mut self, ids: Vec<String>) -> Result<(), String> {
-        let id_set : HashSet<&String> = ids.iter().collect();
-        self.in_flight.retain(|msg| !id_set.contains(&msg.id.to_string()));
+        let id_set: HashSet<&String> = ids.iter().collect();
+        self.in_flight
+            .retain(|msg| !id_set.contains(&msg.id.to_string()));
         Ok(())
     }
 
@@ -90,7 +91,10 @@ mod tests {
         let mut storage = setup_storage();
 
         let messages = storage.get(2).await.unwrap();
-        storage.delete(vec![messages[0].id.to_string(), messages[1].id.to_string()]).await.unwrap();
+        storage
+            .delete(vec![messages[0].id.to_string(), messages[1].id.to_string()])
+            .await
+            .unwrap();
         assert_eq!(storage.in_flight.len(), 0);
     }
 
@@ -99,7 +103,10 @@ mod tests {
         let mut storage = setup_storage();
 
         let _messages = storage.get(2).await.unwrap();
-        storage.delete(vec!["non-existent-id".to_string()]).await.unwrap();
+        storage
+            .delete(vec!["non-existent-id".to_string()])
+            .await
+            .unwrap();
         assert_eq!(storage.in_flight.len(), 2);
     }
 
@@ -108,7 +115,10 @@ mod tests {
         let mut storage = setup_storage();
 
         let messages = storage.get(2).await.unwrap();
-        storage.delete(vec![messages[0].id.to_string(), messages[0].id.to_string()]).await.unwrap();
+        storage
+            .delete(vec![messages[0].id.to_string(), messages[0].id.to_string()])
+            .await
+            .unwrap();
         assert_eq!(storage.in_flight.len(), 1);
     }
 }
