@@ -29,8 +29,9 @@ impl Storage for InMemoryStorage {
     }
 
     async fn purge(&mut self) -> Result<(), String> {
-        // remove all messages from in_flight and queue
-        todo!()
+        self.queue.clear();
+        self.in_flight.clear();
+        Ok(())
     }
 
     async fn retry(&mut self, _id: String) -> Result<(), String> {
@@ -120,5 +121,15 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(storage.in_flight.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn test_in_memory_storage_purge() {
+        let mut storage = setup_storage();
+        let _messages = storage.get(1).await.unwrap();
+
+        storage.purge().await.unwrap();
+        assert_eq!(storage.queue.len(), 0);
+        assert_eq!(storage.in_flight.len(), 0);
     }
 }
