@@ -68,7 +68,7 @@ pub trait Storage {
     async fn get(&mut self, count: usize) -> Result<Vec<Message>, String>;
     async fn delete(&mut self, ids: Vec<String>) -> Result<(), String>;
     async fn purge(&mut self) -> Result<(), String>;
-    async fn retry(&mut self, id: String) -> Result<(), String>;
+    async fn retry(&mut self, ids: Vec<String>) -> Result<(), String>;
 }
 
 #[cfg(test)]

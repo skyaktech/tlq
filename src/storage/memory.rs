@@ -1,10 +1,10 @@
-use crate::types::{Message, Storage};
+use crate::types::{Message, MessageState, Storage};
 use async_trait::async_trait;
-use std::collections::HashSet;
+use std::collections::HashMap;
 
 pub struct InMemoryStorage {
     queue: Vec<Message>,
-    in_flight: Vec<Message>,
+    processing: HashMap<String, Message>,
 }
 
 #[async_trait]
@@ -16,27 +16,45 @@ impl Storage for InMemoryStorage {
 
     async fn get(&mut self, count: usize) -> Result<Vec<Message>, String> {
         let count = count.min(self.queue.len());
-        let messages: Vec<Message> = self.queue.drain(0..count).collect();
-        self.in_flight.extend(messages.clone());
+        let mut messages: Vec<Message> = self.queue.drain(0..count).collect();
+        for message in &mut messages {
+            message.state = MessageState::Processing;
+
+            self.processing
+                .insert(message.id.to_string(), message.clone());
+        }
+
         Ok(messages)
     }
 
     async fn delete(&mut self, ids: Vec<String>) -> Result<(), String> {
-        let id_set: HashSet<&String> = ids.iter().collect();
-        self.in_flight
-            .retain(|msg| !id_set.contains(&msg.id.to_string()));
+        for id in ids {
+            self.processing.remove(&id);
+        }
         Ok(())
     }
 
     async fn purge(&mut self) -> Result<(), String> {
         self.queue.clear();
-        self.in_flight.clear();
+        self.processing.clear();
         Ok(())
     }
 
-    async fn retry(&mut self, _id: String) -> Result<(), String> {
-        // move message from in_flight back to queue, increment retry_count
-        todo!()
+    async fn retry(&mut self, ids: Vec<String>) -> Result<(), String> {
+        let mut retried_messages = Vec::new();
+
+        for id in &ids {
+            if let Some(mut message) = self.processing.remove(id) {
+                message.retry_count += 1;
+                message.state = MessageState::Ready;
+
+                retried_messages.push(message);
+            }
+        }
+
+        self.queue.extend(retried_messages);
+
+        Ok(())
     }
 }
 
@@ -51,7 +69,7 @@ mod tests {
                 Message::new("Hello Solar System".to_string()),
                 Message::new("Hello Universe".to_string()),
             ],
-            in_flight: vec![],
+            processing: HashMap::new(),
         }
     }
 
@@ -71,10 +89,13 @@ mod tests {
     async fn test_in_memory_storage_get() {
         let mut storage = setup_storage();
 
-        let messages = storage.get(1).await.unwrap();
-        assert_eq!(messages.len(), 1);
-        assert_eq!(storage.queue.len(), 2);
-        assert_eq!(storage.in_flight.len(), 1);
+        let messages = storage.get(2).await.unwrap();
+        assert_eq!(messages.len(), 2);
+        for message in &messages {
+            assert_eq!(message.state, MessageState::Processing);
+        }
+        assert_eq!(storage.queue.len(), 1);
+        assert_eq!(storage.processing.len(), 2);
     }
 
     #[tokio::test]
@@ -84,7 +105,7 @@ mod tests {
         let messages = storage.get(5).await.unwrap();
         assert_eq!(messages.len(), 3);
         assert_eq!(storage.queue.len(), 0);
-        assert_eq!(storage.in_flight.len(), 3);
+        assert_eq!(storage.processing.len(), 3);
     }
 
     #[tokio::test]
@@ -96,7 +117,7 @@ mod tests {
             .delete(vec![messages[0].id.to_string(), messages[1].id.to_string()])
             .await
             .unwrap();
-        assert_eq!(storage.in_flight.len(), 0);
+        assert_eq!(storage.processing.len(), 0);
     }
 
     #[tokio::test]
@@ -108,7 +129,7 @@ mod tests {
             .delete(vec!["non-existent-id".to_string()])
             .await
             .unwrap();
-        assert_eq!(storage.in_flight.len(), 2);
+        assert_eq!(storage.processing.len(), 2);
     }
 
     #[tokio::test]
@@ -120,7 +141,7 @@ mod tests {
             .delete(vec![messages[0].id.to_string(), messages[0].id.to_string()])
             .await
             .unwrap();
-        assert_eq!(storage.in_flight.len(), 1);
+        assert_eq!(storage.processing.len(), 1);
     }
 
     #[tokio::test]
@@ -130,6 +151,19 @@ mod tests {
 
         storage.purge().await.unwrap();
         assert_eq!(storage.queue.len(), 0);
-        assert_eq!(storage.in_flight.len(), 0);
+        assert_eq!(storage.processing.len(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_in_memory_storage_retry() {
+        let mut storage = setup_storage();
+        let messages = storage.get(2).await.unwrap();
+        storage
+            .retry(vec![messages[0].id.to_string()])
+            .await
+            .unwrap();
+
+        assert_eq!(storage.queue.len(), 2);
+        assert_eq!(storage.processing.len(), 1);
     }
 }
