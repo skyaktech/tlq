@@ -1,2 +1,2 @@
 pub mod memory;
-mod traits;
+pub mod traits;

@@ -19,6 +19,12 @@ impl MemoryStorage {
     }
 }
 
+impl Default for MemoryStorage {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[async_trait]
 impl Storage for MemoryStorage {
     async fn add(&self, msg: Message) -> Result<(), String> {
