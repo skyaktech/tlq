@@ -1,9 +1,9 @@
+use crate::storage::traits::Storage;
 use crate::types::Message;
 use async_trait::async_trait;
 use base::BaseMemoryStorage;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use crate::storage::traits::Storage;
 
 mod base;
 
