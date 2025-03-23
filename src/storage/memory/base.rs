@@ -1,20 +1,25 @@
-use crate::types::{Message, MessageState, Storage};
-use async_trait::async_trait;
+use crate::types::{Message, MessageState};
 use std::collections::HashMap;
 
-pub struct InMemoryStorage {
+pub struct BaseMemoryStorage {
     queue: Vec<Message>,
     processing: HashMap<String, Message>,
 }
 
-#[async_trait]
-impl Storage for InMemoryStorage {
-    async fn add(&mut self, msg: Message) -> Result<(), String> {
+impl BaseMemoryStorage {
+    pub(crate) fn new() -> Self {
+        BaseMemoryStorage {
+            queue: Vec::new(),
+            processing: HashMap::new(),
+        }
+    }
+
+    pub(crate) async fn add(&mut self, msg: Message) -> Result<(), String> {
         self.queue.push(msg);
         Ok(())
     }
 
-    async fn get(&mut self, count: usize) -> Result<Vec<Message>, String> {
+    pub(crate) async fn get(&mut self, count: usize) -> Result<Vec<Message>, String> {
         let count = count.min(self.queue.len());
         let mut messages: Vec<Message> = self.queue.drain(0..count).collect();
         for message in &mut messages {
@@ -27,20 +32,20 @@ impl Storage for InMemoryStorage {
         Ok(messages)
     }
 
-    async fn delete(&mut self, ids: Vec<String>) -> Result<(), String> {
+    pub(crate) async fn delete(&mut self, ids: Vec<String>) -> Result<(), String> {
         for id in ids {
             self.processing.remove(&id);
         }
         Ok(())
     }
 
-    async fn purge(&mut self) -> Result<(), String> {
+    pub(crate) async fn purge(&mut self) -> Result<(), String> {
         self.queue.clear();
         self.processing.clear();
         Ok(())
     }
 
-    async fn retry(&mut self, ids: Vec<String>) -> Result<(), String> {
+    pub(crate) async fn retry(&mut self, ids: Vec<String>) -> Result<(), String> {
         let mut retried_messages = Vec::new();
 
         for id in &ids {
@@ -62,8 +67,8 @@ impl Storage for InMemoryStorage {
 mod tests {
     use super::*;
 
-    fn setup_storage() -> InMemoryStorage {
-        InMemoryStorage {
+    fn setup_storage() -> BaseMemoryStorage {
+        BaseMemoryStorage {
             queue: vec![
                 Message::new("Hello World".to_string()),
                 Message::new("Hello Solar System".to_string()),
@@ -74,7 +79,14 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_in_memory_storage_add() {
+    async fn test_new_base_memory_storage() {
+        let storage = BaseMemoryStorage::new();
+        assert_eq!(storage.queue.len(), 0);
+        assert_eq!(storage.processing.len(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_base_memory_storage_add() {
         let mut storage = setup_storage();
 
         let msg = Message::new("Hello Serbia".to_string());
@@ -86,7 +98,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_in_memory_storage_get() {
+    async fn test_base_memory_storage_get() {
         let mut storage = setup_storage();
 
         let messages = storage.get(2).await.unwrap();
@@ -99,7 +111,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_in_memory_storage_get_more_than_available() {
+    async fn test_base_memory_storage_get_more_than_available() {
         let mut storage = setup_storage();
 
         let messages = storage.get(5).await.unwrap();
@@ -109,7 +121,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_in_memory_storage_delete() {
+    async fn test_base_memory_storage_delete() {
         let mut storage = setup_storage();
 
         let messages = storage.get(2).await.unwrap();
@@ -121,7 +133,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_in_memory_storage_delete_non_existent() {
+    async fn test_base_memory_storage_delete_non_existent() {
         let mut storage = setup_storage();
 
         let _messages = storage.get(2).await.unwrap();
@@ -133,7 +145,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_in_memory_storage_delete_duplicate() {
+    async fn test_base_memory_storage_delete_duplicate() {
         let mut storage = setup_storage();
 
         let messages = storage.get(2).await.unwrap();
@@ -145,7 +157,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_in_memory_storage_purge() {
+    async fn test_base_memory_storage_purge() {
         let mut storage = setup_storage();
         let _messages = storage.get(1).await.unwrap();
 
@@ -155,7 +167,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_in_memory_storage_retry() {
+    async fn test_base_memory_storage_retry() {
         let mut storage = setup_storage();
         let messages = storage.get(2).await.unwrap();
         storage

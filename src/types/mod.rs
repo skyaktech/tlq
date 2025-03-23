@@ -1,4 +1,3 @@
-use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -60,15 +59,6 @@ impl Message {
             retry_count: 0,
         }
     }
-}
-
-#[async_trait]
-pub trait Storage {
-    async fn add(&mut self, msg: Message) -> Result<(), String>;
-    async fn get(&mut self, count: usize) -> Result<Vec<Message>, String>;
-    async fn delete(&mut self, ids: Vec<String>) -> Result<(), String>;
-    async fn purge(&mut self) -> Result<(), String>;
-    async fn retry(&mut self, ids: Vec<String>) -> Result<(), String>;
 }
 
 #[cfg(test)]
