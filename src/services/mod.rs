@@ -27,9 +27,7 @@ impl<S: Storage> MessageService<S> {
     }
 
     pub async fn delete(&self, ids: Vec<String>) -> Result<(), String> {
-        if let Err(e) = Self::validate_ids(&ids) {
-            return Err(e);
-        }
+        Self::validate_ids(&ids)?;
 
         self.store.delete(ids).await
     }
@@ -39,9 +37,7 @@ impl<S: Storage> MessageService<S> {
     }
 
     pub async fn retry(&self, ids: Vec<String>) -> Result<(), String> {
-        if let Err(e) = Self::validate_ids(&ids) {
-            return Err(e);
-        }
+        Self::validate_ids(&ids)?;
 
         self.store.retry(ids).await
     }
