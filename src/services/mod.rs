@@ -11,7 +11,7 @@ impl<S: Storage> MessageService<S> {
     }
 }
 
-const MESSAGE_SIZE_LIMIT: usize = 65536;
+const MESSAGE_SIZE_LIMIT: usize = 65536; // 64KB
 
 impl<S: Storage> MessageService<S> {
     pub async fn add(&self, msg: Message) -> Result<(), String> {
