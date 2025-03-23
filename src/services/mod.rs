@@ -1,19 +1,21 @@
 use crate::storage::traits::Storage;
 use crate::types::Message;
+use std::sync::Arc;
 
-pub struct MessageService<S: Storage> {
-    store: S,
+#[derive(Clone)]
+pub struct MessageService {
+    store: Arc<dyn Storage>,
 }
 
-impl<S: Storage> MessageService<S> {
-    pub fn new(store: S) -> Self {
+impl MessageService {
+    pub fn new(store: Arc<dyn Storage>) -> MessageService {
         Self { store }
     }
 }
 
 const MESSAGE_SIZE_LIMIT: usize = 65536; // 64KB
 
-impl<S: Storage> MessageService<S> {
+impl MessageService {
     pub async fn add(&self, msg: Message) -> Result<(), String> {
         if msg.body.len() > MESSAGE_SIZE_LIMIT {
             return Err("Message body size is too large".to_string());
@@ -71,7 +73,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_message_size_limit() {
-        let store = MemoryStorage::new();
+        let store = Arc::new(MemoryStorage::new());
         let service = MessageService::new(store);
 
         let msg = Message::new("A".repeat(MESSAGE_SIZE_LIMIT));
@@ -86,16 +88,16 @@ mod tests {
     #[tokio::test]
     async fn test_validate_ids() {
         let ids = vec![Uuid::now_v7().to_string()];
-        let result = MessageService::<MemoryStorage>::validate_ids(&ids);
+        let result = MessageService::validate_ids(&ids);
         assert!(result.is_ok());
 
         let ids = vec!["invalid".to_string()];
-        let result = MessageService::<MemoryStorage>::validate_ids(&ids);
+        let result = MessageService::validate_ids(&ids);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), "Invalid message IDs: [\"invalid\"]");
 
         let ids = vec![];
-        let result = MessageService::<MemoryStorage>::validate_ids(&ids);
+        let result = MessageService::validate_ids(&ids);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), "No message IDs provided");
     }
