@@ -1,4 +1,6 @@
-use crate::api::models::{AddMessageRequest, DeleteMessagesRequest, GetMessagesRequest};
+use crate::api::models::{
+    AddMessageRequest, DeleteMessagesRequest, GetMessagesRequest, RetryMessagesRequest,
+};
 use crate::services::MessageService;
 use crate::types::Message;
 use axum::extract::State;
@@ -47,7 +49,7 @@ pub async fn purge_messages(State(service): State<MessageService>) -> ApiRespons
 
 pub async fn retry_messages(
     State(service): State<MessageService>,
-    Json(request): Json<DeleteMessagesRequest>,
+    Json(request): Json<RetryMessagesRequest>,
 ) -> ApiResponse<String> {
     let ids = request.ids;
     match service.retry(ids).await {
