@@ -9,3 +9,13 @@ pub struct AddMessageRequest {
 pub struct GetMessagesRequest {
     pub count: Option<usize>,
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct DeleteMessagesRequest {
+    pub ids: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct RetryMessagesRequest {
+    pub ids: Vec<String>,
+}
