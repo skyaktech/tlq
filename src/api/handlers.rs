@@ -14,7 +14,7 @@ pub async fn add_message(
 ) -> ApiResponse<String> {
     match service.add(Message::new(request.body)).await {
         Ok(_) => success("Success".to_string()),
-        Err(_) => error(ApiError::BadRequest(None)),
+        Err(message) => error(ApiError::BadRequest(Some(message))),
     }
 }
 
@@ -25,7 +25,7 @@ pub async fn get_messages(
     let count = request.count.unwrap_or(1);
     match service.get(count).await {
         Ok(messages) => success(messages),
-        Err(_) => error(ApiError::BadRequest(None)),
+        Err(message) => error(ApiError::BadRequest(Some(message))),
     }
 }
 
@@ -36,14 +36,14 @@ pub async fn delete_messages(
     let ids = request.ids;
     match service.delete(ids).await {
         Ok(_) => success("Success".to_string()),
-        Err(_) => error(ApiError::BadRequest(None)),
+        Err(message) => error(ApiError::BadRequest(Some(message))),
     }
 }
 
 pub async fn purge_messages(State(service): State<MessageService>) -> ApiResponse<String> {
     match service.purge().await {
         Ok(_) => success("Success".to_string()),
-        Err(_) => error(ApiError::BadRequest(None)),
+        Err(message) => error(ApiError::BadRequest(Some(message))),
     }
 }
 
@@ -54,6 +54,6 @@ pub async fn retry_messages(
     let ids = request.ids;
     match service.retry(ids).await {
         Ok(_) => success("Success".to_string()),
-        Err(_) => error(ApiError::BadRequest(None)),
+        Err(message) => error(ApiError::BadRequest(Some(message))),
     }
 }
