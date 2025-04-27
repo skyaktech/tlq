@@ -33,13 +33,13 @@ pub fn create_post_request(path: &str, body_content: serde_json::Value) -> Reque
 }
 
 /// Creates a GET request with the specified path.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `path` - The URI path for the request (e.g., "/hello")
-/// 
+///
 /// # Returns
-/// 
+///
 /// An HTTP GET request with JSON content type and empty body
 pub fn create_get_request(path: &str) -> Request<Body> {
     Request::builder()
