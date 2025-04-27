@@ -1,19 +1,15 @@
+use crate::common::{create_post_request, setup_test_app};
 use axum::http::StatusCode;
 use http_body_util::BodyExt;
 use serde_json::json;
 use tower::ServiceExt;
 
-mod utils;
-
 #[tokio::test]
-async fn test_add_valid_message_returns_success_response() {
-    let app = utils::setup_test_app();
+async fn test_valid_message_returns_success_response() {
+    let app = setup_test_app();
 
     let response = app
-        .oneshot(utils::create_post_request(
-            "/add",
-            json!({"body": "Hello World"}),
-        ))
+        .oneshot(create_post_request("/add", json!({"body": "Hello World"})))
         .await
         .unwrap();
 
@@ -25,16 +21,13 @@ async fn test_add_valid_message_returns_success_response() {
 }
 
 #[tokio::test]
-async fn test_add_message_with_body_exceeding_size_limit_returns_bad_request() {
-    let app = utils::setup_test_app();
+async fn test_message_with_body_exceeding_size_limit_returns_bad_request() {
+    let app = setup_test_app();
 
     let large_body = "a".repeat(65537);
 
     let response = app
-        .oneshot(utils::create_post_request(
-            "/add",
-            json!({"body": large_body}),
-        ))
+        .oneshot(create_post_request("/add", json!({"body": large_body})))
         .await
         .unwrap();
 

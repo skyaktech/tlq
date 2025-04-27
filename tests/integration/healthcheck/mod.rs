@@ -1,18 +1,14 @@
+use crate::common::{create_get_request, setup_test_app};
 use http::StatusCode;
 use http_body_util::BodyExt;
 use serde_json::json;
 use tower::ServiceExt;
 
-mod utils;
-
 #[tokio::test]
 async fn test_health_check() {
-    let app = utils::setup_test_app();
+    let app = setup_test_app();
 
-    let response = app
-        .oneshot(utils::create_get_request("/hello"))
-        .await
-        .unwrap();
+    let response = app.oneshot(create_get_request("/hello")).await.unwrap();
 
     assert_eq!(response.status(), StatusCode::OK);
 

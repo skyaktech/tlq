@@ -10,6 +10,10 @@ description = "Tiny Little Queue"
 name = "tlq"
 path = "src/main.rs"
 
+[[test]]
+name = "integration"
+path = "tests/mod.rs"
+
 [dependencies]
 uuid = { version = "1", features = ["v7", "serde"] }
 serde = { version = "1.0", features = ["derive"] }

@@ -23,6 +23,7 @@ pub fn setup_test_app() -> Router {
 /// # Returns
 ///
 /// An HTTP POST request with JSON content type and the provided body
+#[cfg(test)]
 pub fn create_post_request(path: &str, body_content: serde_json::Value) -> Request<Body> {
     Request::builder()
         .uri(path)
@@ -41,6 +42,7 @@ pub fn create_post_request(path: &str, body_content: serde_json::Value) -> Reque
 /// # Returns
 ///
 /// An HTTP GET request with JSON content type and empty body
+#[cfg(test)]
 pub fn create_get_request(path: &str) -> Request<Body> {
     Request::builder()
         .uri(path)
