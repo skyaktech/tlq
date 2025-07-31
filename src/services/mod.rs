@@ -58,7 +58,7 @@ impl MessageService {
         }
 
         if !invalid_ids.is_empty() {
-            return Err(format!("Invalid message IDs: {:?}", invalid_ids));
+            return Err(format!("Invalid message IDs: {invalid_ids:?}"));
         }
 
         Ok(())
