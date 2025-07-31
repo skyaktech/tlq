@@ -27,11 +27,15 @@ async fn test_delete_messages() {
 async fn test_incorrect_id() {
     let mut app = setup_test_app().into_service();
 
-    let delete_request = create_post_request("/delete", json!({"ids": ["invalid-id1", "invalid-id2"]}));
+    let delete_request =
+        create_post_request("/delete", json!({"ids": ["invalid-id1", "invalid-id2"]}));
     let response = send_request(&mut app, delete_request).await;
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let body_text = String::from_utf8(body.to_vec()).unwrap();
-    assert_eq!(body_text, "Invalid message IDs: [\"invalid-id1\", \"invalid-id2\"]");
+    assert_eq!(
+        body_text,
+        "Invalid message IDs: [\"invalid-id1\", \"invalid-id2\"]"
+    );
 }
