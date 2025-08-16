@@ -17,7 +17,11 @@ async fn test_valid_message_returns_success_response() {
 
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let body_json = serde_json::from_slice::<serde_json::Value>(&body).unwrap();
-    assert_eq!(body_json, json!("Success"));
+
+    assert_eq!(body_json["body"], json!("Hello World"));
+    assert!(body_json["id"].is_string());
+    assert_eq!(body_json["state"], json!("Ready"));
+    assert_eq!(body_json["retry_count"], json!(0));
 }
 
 #[tokio::test]

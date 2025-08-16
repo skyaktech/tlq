@@ -11,9 +11,9 @@ use skyak_axum_core::https::{error, success, ApiResponse};
 pub async fn add_message(
     State(service): State<MessageService>,
     Json(request): Json<AddMessageRequest>,
-) -> ApiResponse<String> {
-    match service.add(Message::new(request.body)).await {
-        Ok(_) => success("Success".to_string()),
+) -> ApiResponse<Message> {
+    match service.add(request.body).await {
+        Ok(message) => success(message),
         Err(message) => error(ApiError::BadRequest(Some(message))),
     }
 }

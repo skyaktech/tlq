@@ -16,12 +16,14 @@ impl MessageService {
 const MESSAGE_SIZE_LIMIT: usize = 65536; // 64KB
 
 impl MessageService {
-    pub async fn add(&self, msg: Message) -> Result<(), String> {
-        if msg.body.len() > MESSAGE_SIZE_LIMIT {
+    pub async fn add(&self, body: String) -> Result<Message, String> {
+        if body.len() > MESSAGE_SIZE_LIMIT {
             return Err("Message body size is too large".to_string());
         }
 
-        self.store.add(msg).await
+        let msg = Message::new(body);
+        self.store.add(msg.clone()).await?;
+        Ok(msg)
     }
 
     pub async fn get(&self, count: usize) -> Result<Vec<Message>, String> {
@@ -72,17 +74,24 @@ mod tests {
     use uuid::Uuid;
 
     #[tokio::test]
-    async fn test_message_size_limit() {
+    async fn test_message_size_within_limit_succeeds() {
         let store = Arc::new(MemoryStorage::new());
         let service = MessageService::new(store);
 
-        let msg = Message::new("A".repeat(MESSAGE_SIZE_LIMIT));
-        let result = service.add(msg).await;
+        let body = "A".repeat(MESSAGE_SIZE_LIMIT);
+        let result = service.add(body).await;
         assert!(result.is_ok());
+    }
 
-        let msg = Message::new("A".repeat(MESSAGE_SIZE_LIMIT + 1));
-        let result = service.add(msg).await;
+    #[tokio::test]
+    async fn test_message_size_over_limit_fails() {
+        let store = Arc::new(MemoryStorage::new());
+        let service = MessageService::new(store);
+
+        let body = "A".repeat(MESSAGE_SIZE_LIMIT + 1);
+        let result = service.add(body).await;
         assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Message body size is too large");
     }
 
     #[tokio::test]
