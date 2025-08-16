@@ -3,8 +3,6 @@ use http::StatusCode;
 use http_body_util::BodyExt;
 use serde_json::json;
 use tlq::types::Message;
-use tracing::debug;
-
 #[tokio::test]
 async fn test_get_messages() {
     let mut app = setup_test_app().into_service();
@@ -24,7 +22,6 @@ async fn test_get_messages() {
 
     let regex = regex::Regex::new(r"message \d+").unwrap();
     for message in &body_json {
-        debug!("Message body: {}", &message.body);
         assert!(regex.is_match(&message.body));
     }
     let get_request = create_post_request("/get", json!({"count": 10}));
