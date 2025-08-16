@@ -1,3 +1,5 @@
 /target
 .idea
 .DS_Store
+tarpaulin-report.html
+.claude/
