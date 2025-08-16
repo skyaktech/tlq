@@ -1,5 +1,5 @@
 use crate::common::{create_post_request, send_request, setup_test_app};
-use axum::http::StatusCode;
+use http::StatusCode;
 use http_body_util::BodyExt;
 use serde_json::json;
 use tlq::types::Message;
