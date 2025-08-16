@@ -44,6 +44,33 @@ publish: all
 publish-dry-run: all
     cargo publish --dry-run
 
+# Build single-architecture Docker image
+docker-build:
+    docker build -t tlq:latest .
+
+# Build and push multi-architecture Docker image to Docker Hub
+docker-publish version="latest": all
+    @echo "Building and pushing multi-architecture Docker image..."
+    ./build-multiarch.sh {{version}}
+
+# Build multi-architecture Docker image locally (no push)
+docker-build-multiarch:
+    @echo "Building multi-architecture Docker image locally..."
+    ./build-multiarch.sh --local
+
+# Run Docker container locally
+docker-run port="1337":
+    docker run --rm -p {{port}}:1337 tlq:latest
+
+# Test Docker image health
+docker-test:
+    @echo "Testing Docker image..."
+    docker run --rm --name tlq-test -d -p 8337:1337 tlq:latest
+    sleep 3
+    curl -s http://localhost:8337/hello || echo "Health check failed"
+    docker stop tlq-test
+
+
 # Show available recipes
 help:
     @just --list
