@@ -6,12 +6,61 @@
 
 set -e
 
+# Help function
+show_help() {
+    cat << EOF
+Multi-architecture Docker build script for tlq
+
+USAGE:
+    ./build-multiarch.sh [version] [options]
+
+OPTIONS:
+    -h, --help      Show this help message and exit
+    --local         Build for local use only (doesn't push to Docker Hub)
+
+ARGUMENTS:
+    version         Docker image version tag (optional)
+                    If not provided, auto-detects from Cargo.toml or uses 'latest'
+
+DESCRIPTION:
+    This script builds Docker images for tlq with support for multiple architectures.
+    
+    By default, it:
+    - Builds for both linux/amd64 and linux/arm64
+    - Pushes to Docker Hub (nebojsa/tlq)
+    - Tags the image with the specified version and 'latest'
+    
+    With --local flag:
+    - Builds only for the current platform architecture
+    - Loads the image locally (doesn't push to Docker Hub)
+    - Uses local image name without Docker Hub prefix
+
+EXAMPLES:
+    # Build and push version 1.0.0 to Docker Hub
+    ./build-multiarch.sh 1.0.0
+    
+    # Build version 2.0.0 locally for current platform only
+    ./build-multiarch.sh 2.0.0 --local
+    
+    # Auto-detect version from Cargo.toml and push to Docker Hub
+    ./build-multiarch.sh
+    
+    # Auto-detect version and build locally
+    ./build-multiarch.sh --local
+
+EOF
+    exit 0
+}
+
 # Parse arguments
 LOCAL_MODE=false
 VERSION=""
 
 for arg in "$@"; do
     case $arg in
+        -h|--help)
+            show_help
+            ;;
         --local)
             LOCAL_MODE=true
             shift
