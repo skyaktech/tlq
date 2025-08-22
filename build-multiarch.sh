@@ -97,5 +97,5 @@ else
     echo "To pull: docker pull $FULL_IMAGE_NAME:$VERSION"
 fi
 
-# Clean up builder (optional)
-# docker buildx rm tlq-builder
+# Clean up builder
+docker buildx rm "$BUILDER_NAME"
