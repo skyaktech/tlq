@@ -24,12 +24,12 @@ ARGUMENTS:
 
 DESCRIPTION:
     This script builds Docker images for tlq with support for multiple architectures.
-    
+
     By default, it:
     - Builds for both linux/amd64 and linux/arm64
     - Pushes to Docker Hub (nebojsa/tlq)
     - Tags the image with the specified version and 'latest'
-    
+
     With --local flag:
     - Builds only for the current platform architecture
     - Loads the image locally (doesn't push to Docker Hub)
@@ -38,13 +38,13 @@ DESCRIPTION:
 EXAMPLES:
     # Build and push version 1.0.0 to Docker Hub
     ./build-multiarch.sh 1.0.0
-    
+
     # Build version 2.0.0 locally for current platform only
     ./build-multiarch.sh 2.0.0 --local
-    
+
     # Auto-detect version from Cargo.toml and push to Docker Hub
     ./build-multiarch.sh
-    
+
     # Auto-detect version and build locally
     ./build-multiarch.sh --local
 
@@ -122,6 +122,23 @@ fi
 
 echo "Setting up buildx builder..."
 docker buildx create --name "$BUILDER_NAME" --use --bootstrap 2>/dev/null || docker buildx use "$BUILDER_NAME"
+
+# Ask for confirmation if pushing to Docker Hub
+if [ "$LOCAL_MODE" = false ]; then
+    echo ""
+    echo "⚠️  About to build and push to Docker Hub:"
+    echo "    Repository: $FULL_IMAGE_NAME"
+    echo "    Version: $VERSION"
+    echo "    Platforms: $PLATFORM"
+    echo ""
+    read -p "Do you want to continue? (y/N) " -n 1 -r
+    echo ""
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "❌ Build cancelled by user"
+        docker buildx rm "$BUILDER_NAME" 2>/dev/null || true
+        exit 1
+    fi
+fi
 
 # Build image
 echo "Building image $MODE_TEXT..."
