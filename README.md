@@ -1,14 +1,22 @@
-# tlq
+# TLQ (Tiny Little Queue)
 
-Tiny Little Queue - A minimal message queue server in Rust.
+A minimal message queue that just works.
 
 ## Install
+
+### Using Cargo
 
 ```bash
 cargo install tlq
 ```
 
 *Note: Ensure `~/.cargo/bin` is in your PATH, or run with `~/.cargo/bin/tlq`*
+
+### Using Docker
+
+```bash
+docker run -p 1337:1337 nebojsa/tlq
+```
 
 ## Run
 
@@ -27,18 +35,42 @@ All endpoints accept JSON via POST (except `/hello`):
 - `POST /retry` - Return messages to queue
 - `POST /purge` - Clear all messages
 
+## Client Libraries
+
+Official client libraries are available for multiple languages:
+
+### Rust
+```bash
+cargo add tlq-client
+```
+
+### Node.js
+```bash
+npm install tlq-client
+```
+
+### Python
+```bash
+pip install tlq-client
+```
+
+### Go
+```bash
+go get github.com/skyaktech/tlq-client-go
+```
+
 ## Examples
 
 ```bash
 # Add message
 curl -X POST localhost:1337/add \
   -H "Content-Type: application/json" \
-  -d '{"body":"Hello World"}'
+  -d '{"body":"Hello TLQ!"}'
 
 # Get messages
 curl -X POST localhost:1337/get \
   -H "Content-Type: application/json" \
-  -d '{"count":5}'
+  -d '{"count":1}'
 
 # Delete message
 curl -X POST localhost:1337/delete \
@@ -69,11 +101,20 @@ curl -X POST localhost:1337/purge \
 
 ## Features
 
-- In-memory storage (ephemeral)
+### In-Memory & Fast
+- Zero persistence overhead
+- Ideal for development environments
 - UUID v7 message IDs (time-ordered)
-- 64KB message size limit
+
+### Simple API
+- Just add and get messages
+- No complex configurations
 - Simple retry mechanism
-- Zero configuration
+
+### Zero Dependencies
+- Lightweight standalone binary
+- Minimal system footprint
+- 64KB message size limit
 
 ## Use Cases
 
@@ -90,49 +131,6 @@ curl -X POST localhost:1337/purge \
 - Single node only
 - No dead letter queue
 - No message TTL
-
-## Library Usage
-
-### Direct usage (no HTTP server)
-
-```rust
-use tlq::services::MessageService;
-use tlq::storage::memory::MemoryStorage;
-use std::sync::Arc;
-
-#[tokio::main]
-async fn main() {
-    let store = Arc::new(MemoryStorage::new());
-    let service = MessageService::new(store);
-    
-    // Use the queue directly
-    let msg = service.add("Hello World".to_string()).await.unwrap();
-    let messages = service.get(1).await.unwrap();
-    service.delete(vec![msg.id.to_string()]).await.unwrap();
-}
-```
-
-### With HTTP API
-
-```rust
-use tlq::api::create_api;
-use tlq::services::MessageService;
-use tlq::storage::memory::MemoryStorage;
-use std::sync::Arc;
-
-#[tokio::main]
-async fn main() {
-    let store = Arc::new(MemoryStorage::new());
-    let service = MessageService::new(store);
-    let app = create_api(service);
-    
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:1337")
-        .await
-        .unwrap();
-    
-    axum::serve(listener, app).await.unwrap();
-}
-```
 
 ## License
 
