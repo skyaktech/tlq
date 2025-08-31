@@ -1,5 +1,9 @@
 # TLQ (Tiny Little Queue)
 
+<p align="center">
+  <img src="https://tinylittlequeue.app/logo.svg" alt="TLQ Logo" width="150">
+</p>
+
 A minimal message queue that just works.
 
 ## Install
