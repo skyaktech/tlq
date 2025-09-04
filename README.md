@@ -6,7 +6,7 @@
 
 A minimal message queue that just works.
 
-📖 **[Full Documentation →](USAGE.md)**
+📖 **[Full Documentation →](https://github.com/skyaktech/tlq/blob/main/USAGE.md)**
 
 ## Quick Start
 
