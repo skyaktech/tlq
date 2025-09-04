@@ -25,9 +25,9 @@ RUN touch src/main.rs && cargo build --release --bin tlq
 # Runtime stage
 FROM debian:bookworm-slim
 
-# Install CA certificates for HTTPS if needed
+# Install curl for healthcheck
 RUN apt-get update && apt-get install -y \
-    ca-certificates \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
