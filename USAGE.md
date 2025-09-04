@@ -8,6 +8,59 @@ TLQ is an in-memory message queue where you add messages via `/add` (returns a U
 
 TLQ (Tiny Little Queue) is an in-memory message queue that provides simple, reliable message processing with automatic state management. Messages are stored in memory only - there is no persistence across server restarts.
 
+## Installation
+
+### Using Cargo
+
+Install TLQ directly from crates.io:
+
+```bash
+cargo install tlq
+```
+
+After installation, ensure `~/.cargo/bin` is in your PATH. You can verify the installation with:
+
+```bash
+tlq
+```
+
+If the command is not found, you can run it directly with:
+```bash
+~/.cargo/bin/tlq
+```
+
+### Using Docker
+
+Run TLQ using the official Docker image:
+
+```bash
+docker run -p 1337:1337 nebojsa/tlq
+```
+
+### Building from Source
+
+```bash
+git clone https://github.com/nebjak/tlq.git
+cd tlq
+cargo build --release
+./target/release/tlq
+```
+
+## Running the Server
+
+Start TLQ with default settings:
+
+```bash
+tlq
+```
+
+The server will start on `http://localhost:1337`. You can verify it's running:
+
+```bash
+curl http://localhost:1337/hello
+# Returns: "Hello World"
+```
+
 ## Client Libraries
 
 Official clients are available for:
@@ -32,7 +85,7 @@ Messages in TLQ move through distinct states:
 Every message contains:
 - `id` - UUID v7 (time-ordered unique identifier)
 - `body` - Message content (max 64KB)
-- `state` - Current message state
+- `state` - Current message state ("Ready", "Processing")
 - `retry_count` - Number of retry attempts
 
 ## Operations
@@ -87,7 +140,7 @@ Returns an array of messages. Retrieved messages:
 {"ids": ["uuid1", "uuid2"]}
 ```
 
-Permanently removes successfully processed messages from the queue. Use this after successful message processing.
+Permanently removes messages from the queue. Use this after successful message processing. Returns "Success" on completion.
 
 ### Retrying Messages
 
@@ -100,6 +153,7 @@ Returns messages to the queue when processing fails:
 - Changes state back to **Ready**
 - Increments `retry_count`
 - Makes message available for retrieval again
+- Returns "Success" on completion
 
 ### Purging Queue
 
@@ -109,6 +163,17 @@ Returns messages to the queue when processing fails:
 ```
 
 Removes all messages from the queue, including those being processed.
+
+**⚠️ Warning:** This operation:
+- Immediately deletes ALL messages in the queue
+- Includes messages in "Processing" state
+- Cannot be undone
+- Returns "Success" on completion
+
+Use cases:
+- Clearing test data during development
+- Emergency reset when queue is corrupted
+- Starting fresh after configuration changes
 
 ### Health Check
 
@@ -132,7 +197,9 @@ Returns `"Hello World"` to verify server availability.
 - **Single node only** - No clustering or replication
 - **64KB limit** - Maximum message body size
 
-## Example Workflow
+## Examples
+
+### Basic Workflow
 
 ```bash
 # Add message
@@ -156,3 +223,184 @@ curl -X POST localhost:1337/retry \
   -H "Content-Type: application/json" \
   -d '{"ids":["returned-uuid-here"]}'
 ```
+
+### Batch Processing
+
+```bash
+# Add multiple messages
+curl -X POST localhost:1337/add \
+  -H "Content-Type: application/json" \
+  -d '{"body":"Task 1"}'
+
+curl -X POST localhost:1337/add \
+  -H "Content-Type: application/json" \
+  -d '{"body":"Task 2"}'
+
+# Get multiple messages at once
+curl -X POST localhost:1337/get \
+  -H "Content-Type: application/json" \
+  -d '{"count":10}'
+
+# Delete multiple messages
+curl -X POST localhost:1337/delete \
+  -H "Content-Type: application/json" \
+  -d '{"ids":["uuid1", "uuid2", "uuid3"]}'
+```
+
+### Using Client Libraries
+
+#### Node.js
+```javascript
+const { TLQClient, AddMessageCommand, GetMessagesCommand, 
+        DeleteMessagesCommand, RetryMessagesCommand, 
+        PurgeQueueCommand } = require('tlq-client');
+
+const client = new TLQClient({
+  host: 'localhost',
+  port: 1337
+});
+
+// Add message
+const message = await client.send(new AddMessageCommand({
+  body: JSON.stringify({ task: 'Process this' })
+}));
+console.log('Added message:', message.id);
+
+// Get and process messages
+const result = await client.send(new GetMessagesCommand({ count: 5 }));
+for (const msg of result.messages) {
+  try {
+    // Process message
+    await processTask(JSON.parse(msg.body));
+    await client.send(new DeleteMessagesCommand({ ids: [msg.id] }));
+  } catch (error) {
+    await client.send(new RetryMessagesCommand({ ids: [msg.id] }));
+  }
+}
+
+// Purge queue if needed
+await client.send(new PurgeQueueCommand());
+```
+
+#### Python
+```python
+from tlq_client import TLQClient
+
+# Using context manager for automatic cleanup
+with TLQClient(host="localhost", port=1337) as client:
+    # Add message
+    message_id = client.add_message("Process this task")
+    print(f'Added message: {message_id}')
+    
+    # Get and process messages
+    messages = client.get_messages(count=5)
+    for msg in messages:
+        try:
+            # Process message
+            process_task(msg.body)
+            client.delete_messages(msg.id)
+        except Exception:
+            client.retry_messages(msg.id)
+    
+    # Purge queue if needed (careful!)
+    # client.purge_queue()
+```
+
+#### Rust
+```rust
+use tlq_client::TlqClient;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = TlqClient::builder()
+        .host("localhost")
+        .port(1337)
+        .build();
+    
+    // Add message
+    let message = client.add_message("Process this task").await?;
+    println!("Added message: {}", message.id);
+    
+    // Get and process messages
+    let messages = client.get_messages(5).await?;
+    for msg in messages {
+        match process_task(&msg.body).await {
+            Ok(_) => client.delete_message(msg.id).await?,
+            Err(_) => client.retry_message(msg.id).await?,
+        }
+    }
+    
+    // Purge queue if needed
+    // client.purge_queue().await?;
+    
+    Ok(())
+}
+```
+
+#### Go
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "time"
+    "github.com/skyaktech/tlq-client-go"
+)
+
+func main() {
+    // Create configured client
+    client := tlq.NewClient(
+        tlq.WithHost("localhost"),
+        tlq.WithPort(1337),
+        tlq.WithTimeout(30 * time.Second),
+    )
+    
+    ctx := context.Background()
+    
+    // Add message
+    message, err := client.AddMessage(ctx, "Process this task")
+    if err != nil {
+        panic(err)
+    }
+    fmt.Printf("Added message: %s\n", message.ID)
+    
+    // Get and process messages
+    messages, err := client.GetMessages(ctx, 5)
+    if err != nil {
+        panic(err)
+    }
+    
+    for _, msg := range messages {
+        if err := processTask(msg.Body); err != nil {
+            client.RetryMessages(ctx, []string{msg.ID})
+        } else {
+            client.DeleteMessage(ctx, msg.ID)
+        }
+    }
+    
+    // Purge queue if needed
+    // err = client.PurgeQueue(ctx)
+}
+```
+
+### Emergency Operations
+
+```bash
+# Check server health
+curl http://localhost:1337/hello
+# Returns: "Hello World"
+
+# Purge all messages (use with caution!)
+curl -X POST localhost:1337/purge \
+  -H "Content-Type: application/json" \
+  -d '{}'
+# Returns: "Success"
+```
+
+**When to use purge:**
+- Development/testing: Clear test data between runs
+- Emergency: Queue contains corrupted or invalid messages
+- Reset: Starting fresh after major changes
+
+**⚠️ Never use purge in production unless absolutely necessary** - there's no way to recover purged messages.
