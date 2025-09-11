@@ -61,6 +61,26 @@ curl http://localhost:1337/hello
 # Returns: "Hello World"
 ```
 
+## Configuration
+
+TLQ can be configured via environment variables. All are optional; defaults are shown.
+
+- TLQ_PORT: TCP port to listen on. Default: 1337
+- TLQ_MAX_MESSAGE_SIZE: Maximum message body size in bytes. Default: 65536
+- TLQ_LOG_LEVEL: Log verbosity (trace, debug, info, warn, error). Default: info
+
+Examples:
+
+```bash
+# Change port
+TLQ_PORT=8080 tlq
+
+# Increase message size to 1MB and use debug logs
+TLQ_MAX_MESSAGE_SIZE=1048576 TLQ_LOG_LEVEL=debug tlq
+```
+
+Note: The official Dockerfile exposes and health-checks port 1337 by default; if you change TLQ_PORT inside the container, you may want to adjust your run command and health checks accordingly.
+
 ## Client Libraries
 
 Official clients are available for:

@@ -17,7 +17,9 @@ const MESSAGE_SIZE_LIMIT: usize = 65536; // 64KB
 
 impl MessageService {
     pub async fn add(&self, body: String) -> Result<Message, String> {
-        if body.len() > MESSAGE_SIZE_LIMIT {
+        // Use global config for max message size with a compile-time default fallback
+        let max_size = crate::config::config().max_message_size;
+        if body.len() > max_size {
             return Err("Message body size is too large".to_string());
         }
 

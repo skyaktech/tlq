@@ -51,6 +51,20 @@ curl -X POST localhost:1337/retry \
 - **Auto-locking** - Messages lock on retrieval
 - **Client libraries** - [Rust](https://crates.io/crates/tlq-client), [Node.js](https://www.npmjs.com/package/tlq-client), [Python](https://pypi.org/project/tlq-client/), [Go](https://pkg.go.dev/github.com/skyaktech/tlq-client-go)
 
+## Configuration
+
+You can configure TLQ via environment variables (all optional; defaults shown):
+- TLQ_PORT: TCP port to listen on. Default: 1337
+- TLQ_MAX_MESSAGE_SIZE: Maximum message body size in bytes. Default: 65536
+- TLQ_LOG_LEVEL: Log verbosity (trace, debug, info, warn, error). Default: info
+
+Examples:
+
+```
+TLQ_PORT=8080 tlq
+TLQ_MAX_MESSAGE_SIZE=1048576 TLQ_LOG_LEVEL=debug tlq
+```
+
 ## Why TLQ?
 
 Perfect for:
