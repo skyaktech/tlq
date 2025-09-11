@@ -34,7 +34,20 @@ If the command is not found, you can run it directly with:
 Run TLQ using the official Docker image:
 
 ```bash
+# Default configuration
 docker run -p 1337:1337 nebojsa/tlq
+
+# Custom port (note: port mapping must match TLQ_PORT)
+docker run -e TLQ_PORT=8080 -p 8080:8080 nebojsa/tlq
+
+# Custom message size limit
+docker run -e TLQ_MAX_MESSAGE_SIZE=1048576 -p 1337:1337 nebojsa/tlq
+
+# Debug logging
+docker run -e TLQ_LOG_LEVEL=debug -p 1337:1337 nebojsa/tlq
+
+# Multiple options combined
+docker run -e TLQ_PORT=9000 -e TLQ_LOG_LEVEL=debug -p 9000:9000 nebojsa/tlq
 ```
 
 ### Building from Source

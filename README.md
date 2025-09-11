@@ -18,6 +18,10 @@ cargo install tlq
 
 # Using Docker
 docker run -p 1337:1337 nebojsa/tlq
+
+# Docker with custom configuration
+docker run -e TLQ_PORT=8080 -p 8080:8080 nebojsa/tlq
+docker run -e TLQ_MAX_MESSAGE_SIZE=1048576 -e TLQ_LOG_LEVEL=debug -p 1337:1337 nebojsa/tlq
 ```
 
 ### Use
@@ -60,7 +64,7 @@ You can configure TLQ via environment variables (all optional; defaults shown):
 
 Examples:
 
-```
+```bash
 TLQ_PORT=8080 tlq
 TLQ_MAX_MESSAGE_SIZE=1048576 TLQ_LOG_LEVEL=debug tlq
 ```
