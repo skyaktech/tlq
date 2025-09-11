@@ -1,3 +1,4 @@
+use crate::config;
 use crate::storage::traits::Storage;
 use crate::types::Message;
 use std::sync::Arc;
@@ -13,13 +14,9 @@ impl MessageService {
     }
 }
 
-const MESSAGE_SIZE_LIMIT: usize = 65536; // 64KB
-
 impl MessageService {
     pub async fn add(&self, body: String) -> Result<Message, String> {
-        // Use global config for max message size with a compile-time default fallback
-        let max_size = crate::config::config().max_message_size;
-        if body.len() > max_size {
+        if body.len() > config::config().max_message_size {
             return Err("Message body size is too large".to_string());
         }
 
@@ -80,7 +77,7 @@ mod tests {
         let store = Arc::new(MemoryStorage::new());
         let service = MessageService::new(store);
 
-        let body = "A".repeat(MESSAGE_SIZE_LIMIT);
+        let body = "A".repeat(config::config().max_message_size);
         let result = service.add(body).await;
         assert!(result.is_ok());
     }
@@ -90,7 +87,7 @@ mod tests {
         let store = Arc::new(MemoryStorage::new());
         let service = MessageService::new(store);
 
-        let body = "A".repeat(MESSAGE_SIZE_LIMIT + 1);
+        let body = "A".repeat(config::config().max_message_size + 1);
         let result = service.add(body).await;
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), "Message body size is too large");

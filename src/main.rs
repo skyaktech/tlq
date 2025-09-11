@@ -10,10 +10,8 @@ use tracing_subscriber::{
 
 #[tokio::main]
 async fn main() {
-    // Initialize configuration (lazy: reads env on first call)
-    let cfg = config().clone();
+    let cfg = config();
 
-    // Configure tracing based on config
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::fmt::layer()

@@ -46,6 +46,7 @@ impl Config {
         match self.log_level.to_lowercase().as_str() {
             "trace" => Level::TRACE,
             "debug" => Level::DEBUG,
+            "info" => Level::INFO,
             "warn" | "warning" => Level::WARN,
             "error" => Level::ERROR,
             _ => Level::INFO,
@@ -55,8 +56,6 @@ impl Config {
 
 static CONFIG: OnceLock<Config> = OnceLock::new();
 
-/// Returns a reference to the global configuration.
-/// Initializes it from environment variables on first access.
 pub fn config() -> &'static Config {
     CONFIG.get_or_init(Config::from_env)
 }
