@@ -40,8 +40,8 @@ docker run -p 1337:1337 nebojsa/tlq
 # Custom port (note: port mapping must match TLQ_PORT)
 docker run -e TLQ_PORT=8080 -p 8080:8080 nebojsa/tlq
 
-# Custom message size limit
-docker run -e TLQ_MAX_MESSAGE_SIZE=1048576 -p 1337:1337 nebojsa/tlq
+# Custom message size limit (using k suffix)
+docker run -e TLQ_MAX_MESSAGE_SIZE=128k -p 1337:1337 nebojsa/tlq
 
 # Debug logging
 docker run -e TLQ_LOG_LEVEL=debug -p 1337:1337 nebojsa/tlq
@@ -79,7 +79,7 @@ curl http://localhost:1337/hello
 TLQ can be configured via environment variables. All are optional; defaults are shown.
 
 - TLQ_PORT: TCP port to listen on. Default: 1337
-- TLQ_MAX_MESSAGE_SIZE: Maximum message body size in bytes. Default: 65536
+- TLQ_MAX_MESSAGE_SIZE: Maximum message body size in bytes. Supports K/k suffix (e.g., 128K = 131072 bytes). Default: 65536
 - TLQ_LOG_LEVEL: Log verbosity (trace, debug, info, warn, error). Default: info
 
 Examples:
@@ -89,7 +89,10 @@ Examples:
 TLQ_PORT=8080 tlq
 
 # Increase message size to 1MB and use debug logs
-TLQ_MAX_MESSAGE_SIZE=1048576 TLQ_LOG_LEVEL=debug tlq
+TLQ_MAX_MESSAGE_SIZE=128k TLQ_LOG_LEVEL=debug tlq
+
+# Alternative: specify size in bytes
+TLQ_MAX_MESSAGE_SIZE=32768 TLQ_LOG_LEVEL=debug tlq
 ```
 
 Note: The official Dockerfile exposes and health-checks port 1337 by default; if you change TLQ_PORT inside the container, you may want to adjust your run command and health checks accordingly.
