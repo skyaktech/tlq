@@ -42,12 +42,17 @@ RUN chown tlq:tlq /usr/local/bin/tlq && chmod +x /usr/local/bin/tlq
 # Switch to non-root user
 USER tlq
 
-# Expose port
+# Set default configuration via environment variables
+ENV TLQ_PORT=1337
+ENV TLQ_MAX_MESSAGE_SIZE=65536
+ENV TLQ_LOG_LEVEL=info
+
+# Expose port (note: if TLQ_PORT is changed, map ports accordingly)
 EXPOSE 1337
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:1337/hello || exit 1
+    CMD ["/bin/sh", "-c", "curl -f http://localhost:${TLQ_PORT:-1337}/hello || exit 1"]
 
 # Run the binary
 CMD ["tlq"]
