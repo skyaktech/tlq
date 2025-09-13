@@ -20,7 +20,7 @@ async fn main() {
         .init();
 
     info!(
-        "Starting TLQ with config: port={}, max_message_size={}, log_level={}",
+        "Starting TLQ with configuration: port={}, max_message_size={}, log_level={}",
         cfg.port, cfg.max_message_size, cfg.log_level
     );
 
@@ -30,6 +30,7 @@ async fn main() {
     let app = create_api(service);
     let bind_addr = format!("0.0.0.0:{}", cfg.port);
     let listener = tokio::net::TcpListener::bind(bind_addr).await.unwrap();
+
     info!("Listening on {}", listener.local_addr().unwrap());
 
     axum::serve(listener, app).await.unwrap();

@@ -21,25 +21,29 @@ impl Default for Config {
 
 impl Config {
     pub fn from_env() -> Self {
-        let mut cfg = Config::default();
+        let mut config = Config::default();
 
-        if let Ok(v) = env::var("TLQ_PORT") {
-            if let Ok(p) = v.parse::<u16>() {
-                cfg.port = p;
+        if let Ok(env_value) = env::var("TLQ_PORT") {
+            if let Ok(port) = env_value.parse::<u16>() {
+                config.port = port;
             }
         }
 
-        if let Ok(v) = env::var("TLQ_MAX_MESSAGE_SIZE") {
-            if let Ok(s) = v.parse::<usize>() {
-                cfg.max_message_size = s;
+        if let Ok(env_value) = env::var("TLQ_MAX_MESSAGE_SIZE") {
+            if (env_value.ends_with('K') || env_value.ends_with('k')) && env_value.len() > 1 {
+                if let Ok(number_of_kb) = env_value[..env_value.len() - 1].parse::<usize>() {
+                    config.max_message_size = number_of_kb * 1024;
+                }
+            } else if let Ok(number_of_bytes) = env_value.parse::<usize>() {
+                config.max_message_size = number_of_bytes;
             }
         }
 
         if let Ok(v) = env::var("TLQ_LOG_LEVEL") {
-            cfg.log_level = v;
+            config.log_level = v;
         }
 
-        cfg
+        config
     }
 
     pub fn tracing_level(&self) -> Level {
