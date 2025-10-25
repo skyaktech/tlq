@@ -28,7 +28,7 @@ async fn main() {
     let service = MessageService::new(store);
 
     let app = create_api(service);
-    let bind_addr = format!("0.0.0.0:{}", cfg.port);
+    let bind_addr = format!("[::]:{}", cfg.port);
     let listener = tokio::net::TcpListener::bind(bind_addr).await.unwrap();
 
     info!("Listening on {}", listener.local_addr().unwrap());
