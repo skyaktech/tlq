@@ -27,22 +27,22 @@ DESCRIPTION:
 
     By default, it:
     - Builds for both linux/amd64 and linux/arm64
-    - Pushes to Docker Hub (nebojsa/tlq)
+    - Pushes to GitHub Container Registry (ghcr.io/skyaktech/tlq)
     - Tags the image with the specified version and 'latest'
 
     With --local flag:
     - Builds only for the current platform architecture
-    - Loads the image locally (doesn't push to Docker Hub)
-    - Uses local image name without Docker Hub prefix
+    - Loads the image locally (doesn't push to registry)
+    - Uses local image name without registry prefix
 
 EXAMPLES:
-    # Build and push version 1.0.0 to Docker Hub
+    # Build and push version 1.0.0 to GHCR
     ./build-multiarch.sh 1.0.0
 
     # Build version 2.0.0 locally for current platform only
     ./build-multiarch.sh 2.0.0 --local
 
-    # Auto-detect version from Cargo.toml and push to Docker Hub
+    # Auto-detect version from Cargo.toml and push to GHCR
     ./build-multiarch.sh
 
     # Auto-detect version and build locally
@@ -76,7 +76,8 @@ done
 
 # Configuration
 IMAGE_NAME="tlq"
-DOCKER_HUB_USER="nebojsa"
+GHCR_ORG="skyaktech"
+REGISTRY="ghcr.io"
 
 # Auto-detect version from Cargo.toml if not provided
 if [ -z "$VERSION" ]; then
@@ -105,8 +106,8 @@ if [ "$LOCAL_MODE" = true ]; then
     PLATFORM="linux/$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')"
     echo "🏗️  Local mode: building for current platform only ($PLATFORM)"
 else
-    FULL_IMAGE_NAME="$DOCKER_HUB_USER/$IMAGE_NAME"
-    MODE_TEXT="and pushing to Docker Hub"
+    FULL_IMAGE_NAME="$REGISTRY/$GHCR_ORG/$IMAGE_NAME"
+    MODE_TEXT="and pushing to GitHub Container Registry"
     BUILD_ARGS="--push"
     PLATFORM="linux/amd64,linux/arm64"
 fi
@@ -123,10 +124,10 @@ fi
 echo "Setting up buildx builder..."
 docker buildx create --name "$BUILDER_NAME" --use --bootstrap 2>/dev/null || docker buildx use "$BUILDER_NAME"
 
-# Ask for confirmation if pushing to Docker Hub
+# Ask for confirmation if pushing to GHCR
 if [ "$LOCAL_MODE" = false ]; then
     echo ""
-    echo "⚠️  About to build and push to Docker Hub:"
+    echo "⚠️  About to build and push to GitHub Container Registry:"
     echo "    Repository: $FULL_IMAGE_NAME"
     echo "    Version: $VERSION"
     echo "    Platforms: $PLATFORM"
