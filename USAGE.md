@@ -35,19 +35,19 @@ Run TLQ using the official Docker image:
 
 ```bash
 # Default configuration
-docker run -p 1337:1337 nebojsa/tlq
+docker run -p 1337:1337 ghcr.io/skyaktech/tlq
 
 # Custom port (note: port mapping must match TLQ_PORT)
-docker run -e TLQ_PORT=8080 -p 8080:8080 nebojsa/tlq
+docker run -e TLQ_PORT=8080 -p 8080:8080 ghcr.io/skyaktech/tlq
 
 # Custom message size limit (using k suffix)
-docker run -e TLQ_MAX_MESSAGE_SIZE=128k -p 1337:1337 nebojsa/tlq
+docker run -e TLQ_MAX_MESSAGE_SIZE=128k -p 1337:1337 ghcr.io/skyaktech/tlq
 
 # Debug logging
-docker run -e TLQ_LOG_LEVEL=debug -p 1337:1337 nebojsa/tlq
+docker run -e TLQ_LOG_LEVEL=debug -p 1337:1337 ghcr.io/skyaktech/tlq
 
 # Multiple options combined
-docker run -e TLQ_PORT=9000 -e TLQ_LOG_LEVEL=debug -p 9000:9000 nebojsa/tlq
+docker run -e TLQ_PORT=9000 -e TLQ_LOG_LEVEL=debug -p 9000:9000 ghcr.io/skyaktech/tlq
 ```
 
 ### Building from Source
