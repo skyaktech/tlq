@@ -17,11 +17,11 @@ A minimal message queue that just works.
 cargo install tlq
 
 # Using Docker
-docker run -p 1337:1337 nebojsa/tlq
+docker run -p 1337:1337 ghcr.io/skyaktech/tlq
 
 # Docker with custom configuration
-docker run -e TLQ_PORT=8080 -p 8080:8080 nebojsa/tlq
-docker run -e TLQ_MAX_MESSAGE_SIZE=1048576 -e TLQ_LOG_LEVEL=debug -p 1337:1337 nebojsa/tlq
+docker run -e TLQ_PORT=8080 -p 8080:8080 ghcr.io/skyaktech/tlq
+docker run -e TLQ_MAX_MESSAGE_SIZE=1048576 -e TLQ_LOG_LEVEL=debug -p 1337:1337 ghcr.io/skyaktech/tlq
 ```
 
 ### Use
