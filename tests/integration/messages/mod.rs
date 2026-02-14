@@ -1,5 +1,6 @@
-pub mod add;
+mod add;
 mod delete;
-pub mod get;
+mod get;
+mod processing;
 mod purge;
 mod retry;

@@ -1,16 +1,15 @@
-use crate::types::{Message, MessageState};
-use std::collections::HashMap;
+use crate::types::{Message, MessageProcessing, MessageState};
 
 pub struct BaseMemoryStorage {
     queue: Vec<Message>,
-    processing: HashMap<String, Message>,
+    processing: MessageProcessing,
 }
 
 impl BaseMemoryStorage {
     pub(crate) fn new() -> Self {
         BaseMemoryStorage {
             queue: Vec::new(),
-            processing: HashMap::new(),
+            processing: MessageProcessing::new(),
         }
     }
 
@@ -30,6 +29,10 @@ impl BaseMemoryStorage {
         }
 
         Ok(messages)
+    }
+
+    pub(crate) async fn processing(&self) -> Result<MessageProcessing, String> {
+        Ok(self.processing.clone())
     }
 
     pub(crate) async fn delete(&mut self, ids: Vec<String>) -> Result<(), String> {
@@ -65,6 +68,8 @@ impl BaseMemoryStorage {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashSet;
+
     use super::*;
 
     fn setup_storage() -> BaseMemoryStorage {
@@ -74,7 +79,7 @@ mod tests {
                 Message::new("Hello Solar System".to_string()),
                 Message::new("Hello Universe".to_string()),
             ],
-            processing: HashMap::new(),
+            processing: MessageProcessing::new(),
         }
     }
 
@@ -108,6 +113,26 @@ mod tests {
         }
         assert_eq!(storage.queue.len(), 1);
         assert_eq!(storage.processing.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn test_base_memory_storage_processing() {
+        let mut storage = setup_storage();
+
+        let processing_message = storage.processing().await.unwrap();
+        assert_eq!(processing_message.len(), 0);
+
+        let get_messages = storage
+            .get(2)
+            .await
+            .unwrap()
+            .into_iter()
+            .collect::<HashSet<_>>();
+        let processing_message = storage.processing().await.unwrap();
+
+        let messages = processing_message.into_values().collect::<HashSet<_>>();
+        assert_eq!(get_messages.len(), messages.len());
+        assert_eq!(get_messages, messages);
     }
 
     #[tokio::test]

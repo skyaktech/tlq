@@ -11,6 +11,7 @@ pub fn create_api(service: MessageService) -> Router {
         .route("/hello", get(health::check))
         .route("/add", post(handlers::add_message))
         .route("/get", post(handlers::get_messages))
+        .route("/processing", post(handlers::processing_messages))
         .route("/delete", post(handlers::delete_messages))
         .route("/purge", post(handlers::purge_messages))
         .route("/retry", post(handlers::retry_messages))

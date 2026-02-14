@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Represents the current state of a message in the queue
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, PartialOrd, Eq, Ord, Hash)]
 pub enum MessageState {
     /// Message is available for processing
     Ready,
@@ -14,7 +14,7 @@ pub enum MessageState {
 
 /// Represents a message in the queue system.
 /// Uses UUID v7 for time-ordered message IDs with embedded timestamps.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Message {
     /// Unique identifier with embedded timestamp (UUID v7)
     pub id: Uuid,
@@ -60,6 +60,8 @@ impl Message {
         }
     }
 }
+
+pub type MessageProcessing = std::collections::HashMap<String, Message>;
 
 #[cfg(test)]
 mod tests {

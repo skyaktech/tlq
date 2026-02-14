@@ -11,6 +11,9 @@ pub struct GetMessagesRequest {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct ProcessingMessagesRequest;
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct DeleteMessagesRequest {
     pub ids: Vec<String>,
 }

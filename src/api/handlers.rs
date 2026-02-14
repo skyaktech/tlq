@@ -1,5 +1,6 @@
 use crate::api::models::{
-    AddMessageRequest, DeleteMessagesRequest, GetMessagesRequest, RetryMessagesRequest,
+    AddMessageRequest, DeleteMessagesRequest, GetMessagesRequest, ProcessingMessagesRequest,
+    RetryMessagesRequest,
 };
 use crate::services::MessageService;
 use crate::types::Message;
@@ -25,6 +26,16 @@ pub async fn get_messages(
     let count = request.count.unwrap_or(1);
     match service.get(count).await {
         Ok(messages) => success(messages),
+        Err(message) => error(ApiError::BadRequest(Some(message))),
+    }
+}
+
+pub async fn processing_messages(
+    State(service): State<MessageService>,
+    Json(_request): Json<ProcessingMessagesRequest>,
+) -> ApiResponse<Vec<Message>> {
+    match service.processing().await {
+        Ok(messages) => success(messages.values().cloned().collect::<Vec<Message>>()),
         Err(message) => error(ApiError::BadRequest(Some(message))),
     }
 }

@@ -1,5 +1,5 @@
 use crate::storage::traits::Storage;
-use crate::types::Message;
+use crate::types::{Message, MessageProcessing};
 use async_trait::async_trait;
 use base::BaseMemoryStorage;
 use std::sync::Arc;
@@ -35,6 +35,11 @@ impl Storage for MemoryStorage {
     async fn get(&self, count: usize) -> Result<Vec<Message>, String> {
         let mut storage = self.inner.lock().await;
         storage.get(count).await
+    }
+
+    async fn processing(&self) -> Result<MessageProcessing, String> {
+        let storage = self.inner.lock().await;
+        storage.processing().await
     }
 
     async fn delete(&self, ids: Vec<String>) -> Result<(), String> {
