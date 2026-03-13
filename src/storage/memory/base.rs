@@ -1,4 +1,4 @@
-use crate::types::{Message, MessageState};
+use crate::types::{Message, MessageState, QueueStats};
 use std::collections::HashMap;
 
 pub struct BaseMemoryStorage {
@@ -30,6 +30,13 @@ impl BaseMemoryStorage {
         }
 
         Ok(messages)
+    }
+
+    pub(crate) async fn stats(&self) -> Result<QueueStats, String> {
+        Ok(QueueStats {
+            ready: self.queue.len(),
+            processing: self.processing.len(),
+        })
     }
 
     pub(crate) async fn delete(&mut self, ids: Vec<String>) -> Result<(), String> {
@@ -177,5 +184,20 @@ mod tests {
 
         assert_eq!(storage.queue.len(), 2);
         assert_eq!(storage.processing.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn test_base_memory_storage_stats() {
+        let mut storage = setup_storage();
+
+        let stats = storage.stats().await.unwrap();
+        assert_eq!(stats.ready, 3);
+        assert_eq!(stats.processing, 0);
+
+        storage.get(2).await.unwrap();
+
+        let stats = storage.stats().await.unwrap();
+        assert_eq!(stats.ready, 1);
+        assert_eq!(stats.processing, 2);
     }
 }
