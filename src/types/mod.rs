@@ -29,6 +29,15 @@ pub struct Message {
     pub retry_count: i32,
 }
 
+/// Queue statistics showing the number of messages in each state
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QueueStats {
+    /// Number of messages available for processing
+    pub ready: usize,
+    /// Number of messages currently being processed
+    pub processing: usize,
+}
+
 impl Message {
     /// Creates a new message with the given body.
     /// Initializes with:
