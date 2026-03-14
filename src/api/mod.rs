@@ -9,6 +9,7 @@ mod models;
 pub fn create_api(service: MessageService) -> Router {
     Router::new()
         .route("/hello", get(health::check))
+        .route("/stats", get(handlers::stats))
         .route("/add", post(handlers::add_message))
         .route("/get", post(handlers::get_messages))
         .route("/delete", post(handlers::delete_messages))

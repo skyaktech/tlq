@@ -1,6 +1,6 @@
 use crate::config;
 use crate::storage::traits::Storage;
-use crate::types::Message;
+use crate::types::{Message, QueueStats};
 use std::sync::Arc;
 
 #[derive(Clone)]
@@ -27,6 +27,10 @@ impl MessageService {
 
     pub async fn get(&self, count: usize) -> Result<Vec<Message>, String> {
         self.store.get(count).await
+    }
+
+    pub async fn stats(&self) -> Result<QueueStats, String> {
+        self.store.stats().await
     }
 
     pub async fn delete(&self, ids: Vec<String>) -> Result<(), String> {

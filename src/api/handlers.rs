@@ -2,11 +2,18 @@ use crate::api::models::{
     AddMessageRequest, DeleteMessagesRequest, GetMessagesRequest, RetryMessagesRequest,
 };
 use crate::services::MessageService;
-use crate::types::Message;
+use crate::types::{Message, QueueStats};
 use axum::extract::State;
 use axum::Json;
 use skyak_axum_core::errors::ApiError;
 use skyak_axum_core::https::{error, success, ApiResponse};
+
+pub async fn stats(State(service): State<MessageService>) -> ApiResponse<QueueStats> {
+    match service.stats().await {
+        Ok(stats) => success(stats),
+        Err(message) => error(ApiError::BadRequest(Some(message))),
+    }
+}
 
 pub async fn add_message(
     State(service): State<MessageService>,

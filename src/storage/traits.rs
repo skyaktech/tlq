@@ -1,4 +1,4 @@
-use crate::types::Message;
+use crate::types::{Message, QueueStats};
 use async_trait::async_trait;
 
 #[async_trait]
@@ -8,4 +8,5 @@ pub trait Storage: Send + Sync {
     async fn delete(&self, ids: Vec<String>) -> Result<(), String>;
     async fn purge(&self) -> Result<(), String>;
     async fn retry(&self, ids: Vec<String>) -> Result<(), String>;
+    async fn stats(&self) -> Result<QueueStats, String>;
 }
