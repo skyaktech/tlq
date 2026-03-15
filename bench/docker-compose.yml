@@ -1,0 +1,24 @@
+services:
+  tlq:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    ports:
+      - "11337:11337"
+    environment:
+      TLQ_PORT: 11337
+      TLQ_LOG_LEVEL: info
+      TLQ_LOCK_DURATION: 15
+      TLQ_MAX_RETRIES: 3
+      TLQ_WORKER_INTERVAL: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1g
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11337/hello"]
+      interval: 5s
+      timeout: 3s
+      start_period: 10s
+      retries: 5

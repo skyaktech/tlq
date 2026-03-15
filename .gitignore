@@ -3,3 +3,5 @@
 .DS_Store
 tarpaulin-report.html
 .claude/
+bench/results/*
+!bench/results/.gitkeep
