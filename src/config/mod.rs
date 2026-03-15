@@ -5,12 +5,16 @@ use tracing::Level;
 const DEFAULT_PORT: u16 = 1337;
 const DEFAULT_MAX_MESSAGE_SIZE: usize = 65536; // 64KB
 const DEFAULT_LOG_LEVEL: &str = "info";
+const DEFAULT_LOCK_DURATION_SECS: u64 = 60;
+const DEFAULT_MAX_RETRIES: u32 = 3;
 
 #[derive(Debug, Clone)]
 pub struct Config {
     pub port: u16,
     pub max_message_size: usize,
     pub log_level: String,
+    pub lock_duration_secs: u64,
+    pub max_retries: u32,
 }
 
 impl Default for Config {
@@ -19,6 +23,8 @@ impl Default for Config {
             port: DEFAULT_PORT,
             max_message_size: DEFAULT_MAX_MESSAGE_SIZE,
             log_level: DEFAULT_LOG_LEVEL.to_string(),
+            lock_duration_secs: DEFAULT_LOCK_DURATION_SECS,
+            max_retries: DEFAULT_MAX_RETRIES,
         }
     }
 }
@@ -41,6 +47,20 @@ impl Config {
 
         if let Ok(v) = env::var("TLQ_LOG_LEVEL") {
             config.log_level = v;
+        }
+
+        if let Ok(env_value) = env::var("TLQ_LOCK_DURATION") {
+            if let Ok(secs) = env_value.parse::<u64>() {
+                if secs > 0 {
+                    config.lock_duration_secs = secs;
+                }
+            }
+        }
+
+        if let Ok(env_value) = env::var("TLQ_MAX_RETRIES") {
+            if let Ok(retries) = env_value.parse::<u32>() {
+                config.max_retries = retries;
+            }
         }
 
         config
@@ -104,6 +124,8 @@ mod tests {
         env::remove_var("TLQ_PORT");
         env::remove_var("TLQ_MAX_MESSAGE_SIZE");
         env::remove_var("TLQ_LOG_LEVEL");
+        env::remove_var("TLQ_LOCK_DURATION");
+        env::remove_var("TLQ_MAX_RETRIES");
     }
 
     #[test]
@@ -114,6 +136,8 @@ mod tests {
         assert_eq!(config.port, DEFAULT_PORT);
         assert_eq!(config.max_message_size, DEFAULT_MAX_MESSAGE_SIZE);
         assert_eq!(config.log_level, DEFAULT_LOG_LEVEL);
+        assert_eq!(config.lock_duration_secs, DEFAULT_LOCK_DURATION_SECS);
+        assert_eq!(config.max_retries, DEFAULT_MAX_RETRIES);
     }
 
     #[test]
@@ -197,11 +221,15 @@ mod tests {
         env::set_var("TLQ_PORT", "3000");
         env::set_var("TLQ_MAX_MESSAGE_SIZE", "32K");
         env::set_var("TLQ_LOG_LEVEL", "debug");
+        env::set_var("TLQ_LOCK_DURATION", "120");
+        env::set_var("TLQ_MAX_RETRIES", "5");
 
         let config = Config::from_env();
         assert_eq!(config.port, 3000);
         assert_eq!(config.max_message_size, 32 * 1024);
         assert_eq!(config.log_level, "debug");
+        assert_eq!(config.lock_duration_secs, 120);
+        assert_eq!(config.max_retries, 5);
 
         clear_env_vars();
     }
@@ -213,7 +241,54 @@ mod tests {
             assert_eq!(config.port, 5000);
             assert_eq!(config.max_message_size, DEFAULT_MAX_MESSAGE_SIZE);
             assert_eq!(config.log_level, DEFAULT_LOG_LEVEL);
+            assert_eq!(config.lock_duration_secs, DEFAULT_LOCK_DURATION_SECS);
+            assert_eq!(config.max_retries, DEFAULT_MAX_RETRIES);
         });
+    }
+
+    #[test]
+    fn test_lock_durations() {
+        let test_cases = vec![
+            ("30", 30, "valid seconds"),
+            ("120", 120, "two minutes"),
+            ("0", DEFAULT_LOCK_DURATION_SECS, "zero value"),
+            ("abc", DEFAULT_LOCK_DURATION_SECS, "invalid string"),
+            ("", DEFAULT_LOCK_DURATION_SECS, "empty string"),
+            ("-1", DEFAULT_LOCK_DURATION_SECS, "negative value"),
+        ];
+
+        for (input, expected, description) in test_cases {
+            with_env_var("TLQ_LOCK_DURATION", input, || {
+                let config = Config::from_env();
+                assert_eq!(
+                    config.lock_duration_secs, expected,
+                    "Failed for {}: input '{}'",
+                    description, input
+                );
+            });
+        }
+    }
+
+    #[test]
+    fn test_max_retries() {
+        let test_cases = vec![
+            ("5", 5, "valid retries"),
+            ("0", 0, "zero retries"),
+            ("abc", DEFAULT_MAX_RETRIES, "invalid string"),
+            ("", DEFAULT_MAX_RETRIES, "empty string"),
+            ("-1", DEFAULT_MAX_RETRIES, "negative value"),
+        ];
+
+        for (input, expected, description) in test_cases {
+            with_env_var("TLQ_MAX_RETRIES", input, || {
+                let config = Config::from_env();
+                assert_eq!(
+                    config.max_retries, expected,
+                    "Failed for {}: input '{}'",
+                    description, input
+                );
+            });
+        }
     }
 
     #[test]
