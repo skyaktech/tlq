@@ -15,6 +15,7 @@ pub struct Config {
     pub log_level: String,
     pub lock_duration_secs: u64,
     pub max_retries: u32,
+    pub worker_interval_secs: u64,
 }
 
 impl Default for Config {
@@ -25,6 +26,7 @@ impl Default for Config {
             log_level: DEFAULT_LOG_LEVEL.to_string(),
             lock_duration_secs: DEFAULT_LOCK_DURATION_SECS,
             max_retries: DEFAULT_MAX_RETRIES,
+            worker_interval_secs: (DEFAULT_LOCK_DURATION_SECS / 5).max(5),
         }
     }
 }
@@ -60,6 +62,16 @@ impl Config {
         if let Ok(env_value) = env::var("TLQ_MAX_RETRIES") {
             if let Ok(retries) = env_value.parse::<u32>() {
                 config.max_retries = retries;
+            }
+        }
+
+        config.worker_interval_secs = (config.lock_duration_secs / 5).max(5);
+
+        if let Ok(env_value) = env::var("TLQ_WORKER_INTERVAL") {
+            if let Ok(secs) = env_value.parse::<u64>() {
+                if secs > 0 {
+                    config.worker_interval_secs = secs;
+                }
             }
         }
 
@@ -126,6 +138,7 @@ mod tests {
         env::remove_var("TLQ_LOG_LEVEL");
         env::remove_var("TLQ_LOCK_DURATION");
         env::remove_var("TLQ_MAX_RETRIES");
+        env::remove_var("TLQ_WORKER_INTERVAL");
     }
 
     #[test]
@@ -138,6 +151,7 @@ mod tests {
         assert_eq!(config.log_level, DEFAULT_LOG_LEVEL);
         assert_eq!(config.lock_duration_secs, DEFAULT_LOCK_DURATION_SECS);
         assert_eq!(config.max_retries, DEFAULT_MAX_RETRIES);
+        assert_eq!(config.worker_interval_secs, 12); // 60 / 5 = 12
     }
 
     #[test]
@@ -230,6 +244,7 @@ mod tests {
         assert_eq!(config.log_level, "debug");
         assert_eq!(config.lock_duration_secs, 120);
         assert_eq!(config.max_retries, 5);
+        assert_eq!(config.worker_interval_secs, 24); // 120 / 5 = 24
 
         clear_env_vars();
     }
@@ -243,6 +258,7 @@ mod tests {
             assert_eq!(config.log_level, DEFAULT_LOG_LEVEL);
             assert_eq!(config.lock_duration_secs, DEFAULT_LOCK_DURATION_SECS);
             assert_eq!(config.max_retries, DEFAULT_MAX_RETRIES);
+            assert_eq!(config.worker_interval_secs, 12);
         });
     }
 
@@ -289,6 +305,48 @@ mod tests {
                 );
             });
         }
+    }
+
+    #[test]
+    fn test_worker_interval_derived_from_lock_duration() {
+        with_env_var("TLQ_LOCK_DURATION", "300", || {
+            let config = Config::from_env();
+            assert_eq!(config.worker_interval_secs, 60); // 300 / 5
+        });
+
+        with_env_var("TLQ_LOCK_DURATION", "10", || {
+            let config = Config::from_env();
+            assert_eq!(config.worker_interval_secs, 5); // 10 / 5 = 2, floor to 5
+        });
+    }
+
+    #[test]
+    fn test_worker_interval_explicit_override() {
+        let _lock = TEST_MUTEX.lock().unwrap();
+        clear_env_vars();
+        env::set_var("TLQ_LOCK_DURATION", "60");
+        env::set_var("TLQ_WORKER_INTERVAL", "3");
+
+        let config = Config::from_env();
+        assert_eq!(config.worker_interval_secs, 3); // override, not derived
+
+        clear_env_vars();
+    }
+
+    #[test]
+    fn test_worker_interval_invalid_values() {
+        let _lock = TEST_MUTEX.lock().unwrap();
+        clear_env_vars();
+        env::set_var("TLQ_WORKER_INTERVAL", "0");
+        let config = Config::from_env();
+        assert_eq!(config.worker_interval_secs, 12); // falls back to derived
+
+        clear_env_vars();
+        env::set_var("TLQ_WORKER_INTERVAL", "abc");
+        let config = Config::from_env();
+        assert_eq!(config.worker_interval_secs, 12); // falls back to derived
+
+        clear_env_vars();
     }
 
     #[test]
