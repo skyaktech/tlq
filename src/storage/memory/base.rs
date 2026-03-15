@@ -36,6 +36,7 @@ impl BaseMemoryStorage {
         Ok(QueueStats {
             ready: self.queue.len(),
             processing: self.processing.len(),
+            dead: 0,
         })
     }
 
