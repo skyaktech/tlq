@@ -36,6 +36,14 @@ pub struct QueueStats {
     pub ready: usize,
     /// Number of messages currently being processed
     pub processing: usize,
+    /// Cumulative count of messages removed by the reaper after exceeding max retries
+    pub dead: usize,
+}
+
+#[derive(Debug, Clone)]
+pub struct ReapResult {
+    pub retried: usize,
+    pub dead: usize,
 }
 
 impl Message {

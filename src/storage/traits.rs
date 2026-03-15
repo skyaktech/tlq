@@ -1,4 +1,4 @@
-use crate::types::{Message, QueueStats};
+use crate::types::{Message, QueueStats, ReapResult};
 use async_trait::async_trait;
 
 #[async_trait]
@@ -9,4 +9,5 @@ pub trait Storage: Send + Sync {
     async fn purge(&self) -> Result<(), String>;
     async fn retry(&self, ids: Vec<String>) -> Result<(), String>;
     async fn stats(&self) -> Result<QueueStats, String>;
+    async fn reap_expired(&self, max_retries: u32) -> Result<ReapResult, String>;
 }
