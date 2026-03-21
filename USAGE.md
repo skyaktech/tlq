@@ -46,6 +46,9 @@ docker run -e TLQ_MAX_MESSAGE_SIZE=128k -p 1337:1337 ghcr.io/skyaktech/tlq
 # Debug logging
 docker run -e TLQ_LOG_LEVEL=debug -p 1337:1337 ghcr.io/skyaktech/tlq
 
+# Configure reaper (lock duration, max retries)
+docker run -e TLQ_LOCK_DURATION=30 -e TLQ_MAX_RETRIES=5 -p 1337:1337 ghcr.io/skyaktech/tlq
+
 # Multiple options combined
 docker run -e TLQ_PORT=9000 -e TLQ_LOG_LEVEL=debug -p 9000:9000 ghcr.io/skyaktech/tlq
 ```
@@ -81,6 +84,9 @@ TLQ can be configured via environment variables. All are optional; defaults are 
 - TLQ_PORT: TCP port to listen on. Default: 1337
 - TLQ_MAX_MESSAGE_SIZE: Maximum message body size in bytes. Supports K/k suffix (e.g., 128K = 131072 bytes). Default: 65536
 - TLQ_LOG_LEVEL: Log verbosity (trace, debug, info, warn, error). Default: info
+- TLQ_LOCK_DURATION: Seconds a processing message stays locked before the reaper reclaims it. Default: 60
+- TLQ_MAX_RETRIES: Max automatic retries before a message is permanently removed. Default: 3
+- TLQ_WORKER_INTERVAL: Reaper scan interval in seconds. Default: derived as max(lock_duration/5, 5)
 
 Examples:
 
@@ -93,6 +99,9 @@ TLQ_MAX_MESSAGE_SIZE=128k TLQ_LOG_LEVEL=debug tlq
 
 # Alternative: specify size in bytes
 TLQ_MAX_MESSAGE_SIZE=32768 TLQ_LOG_LEVEL=debug tlq
+
+# Configure reaper behavior
+TLQ_LOCK_DURATION=30 TLQ_MAX_RETRIES=5 TLQ_WORKER_INTERVAL=10 tlq
 ```
 
 Note: The official Dockerfile exposes and health-checks port 1337 by default; if you change TLQ_PORT inside the container, you may want to adjust your run command and health checks accordingly.
@@ -114,7 +123,19 @@ Use whatever language your project needs - all clients provide the same function
 Messages in TLQ move through distinct states:
 
 - **Ready** - Available for consumers to retrieve
-- **Processing** - Locked by a consumer, invisible to others
+- **Processing** - Locked by a consumer, invisible to others (has a lock duration)
+
+### Background Reaper
+
+TLQ runs a background worker (reaper) that manages the lifecycle of processing messages:
+
+- When a message is retrieved via `/get`, it is locked for a configurable duration (`TLQ_LOCK_DURATION`, default: 60 seconds)
+- The reaper periodically scans for messages whose lock has expired (`TLQ_WORKER_INTERVAL`)
+- Expired messages with `retry_count < max_retries` are automatically returned to **Ready** state
+- Expired messages that have reached `max_retries` are permanently removed from the queue
+- The cumulative count of removed messages is tracked as `dead` in the `/stats` endpoint
+
+This ensures that messages stuck in processing (e.g., due to a crashed consumer) are automatically recovered or cleaned up.
 
 ### Message Structure
 
@@ -122,6 +143,7 @@ Every message contains:
 - `id` - UUID v7 (time-ordered unique identifier)
 - `body` - Message content (max 64KB)
 - `state` - Current message state ("Ready", "Processing")
+- `lock_until` - Unix timestamp (ms) when the processing lock expires
 - `retry_count` - Number of retry attempts
 
 ## Operations
@@ -211,6 +233,23 @@ Use cases:
 - Emergency reset when queue is corrupted
 - Starting fresh after configuration changes
 
+### Queue Statistics
+
+**GET /stats**
+
+Returns current queue statistics:
+```json
+{
+  "ready": 5,
+  "processing": 2,
+  "dead": 0
+}
+```
+
+- `ready` - Messages available for processing
+- `processing` - Messages currently locked by consumers
+- `dead` - Cumulative count of messages removed by the reaper after exceeding max retries
+
 ### Health Check
 
 **GET /hello**
@@ -228,10 +267,10 @@ Returns `"Hello World"` to verify server availability.
 ## Important Notes
 
 - **No persistence** - All messages lost on server restart
-- **No TTL** - Messages remain until explicitly deleted
-- **No dead letter queue** - Retry count increments but messages retry indefinitely
+- **Lock duration** - Processing messages are automatically reclaimed after the lock expires (default: 60s)
+- **Max retries** - Messages exceeding `max_retries` (default: 3) are permanently removed; the dead count is available via `/stats`
 - **Single node only** - No clustering or replication
-- **64KB limit** - Maximum message body size
+- **64KB limit** - Maximum message body size (configurable via `TLQ_MAX_MESSAGE_SIZE`)
 
 ## Examples
 
