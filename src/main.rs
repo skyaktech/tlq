@@ -18,6 +18,7 @@ async fn main() {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::fmt::layer()
+                .with_target(false)
                 .with_filter(LevelFilter::from_level(cfg.tracing_level())),
         )
         .init();
