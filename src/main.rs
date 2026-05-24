@@ -11,6 +11,8 @@ use tracing_subscriber::{
 
 #[tokio::main]
 async fn main() {
+    tlq::uptime::init();
+
     let cfg = config();
 
     tracing_subscriber::registry()

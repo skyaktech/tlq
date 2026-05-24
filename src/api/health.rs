@@ -1,5 +1,12 @@
 use skyak_axum_core::https::{success, ApiResponse};
 
+use crate::uptime::uptime_human;
+
 pub async fn check() -> ApiResponse<String> {
-    success("Hello World".to_string())
+    let version = env!("CARGO_PKG_VERSION");
+    success(format!(
+        "Hello TLQ v{} (uptime: {})",
+        version,
+        uptime_human()
+    ))
 }
