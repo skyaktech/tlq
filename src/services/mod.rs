@@ -2,6 +2,7 @@ use crate::config;
 use crate::storage::traits::Storage;
 use crate::types::{Message, QueueStats};
 use std::sync::Arc;
+use tracing::{debug, info, warn};
 
 #[derive(Clone)]
 pub struct MessageService {
@@ -16,17 +17,26 @@ impl MessageService {
 
 impl MessageService {
     pub async fn add(&self, body: String) -> Result<Message, String> {
-        if body.len() > config::config().max_message_size {
+        let max_size = config::config().max_message_size;
+        let size = body.len();
+
+        if size > max_size {
+            warn!(size, limit = max_size, "message rejected: body too large");
             return Err("Message body size is too large".to_string());
         }
 
         let msg = Message::new(body);
         self.store.add(msg.clone()).await?;
+        debug!(id = %msg.id, size, "message added");
+
         Ok(msg)
     }
 
     pub async fn get(&self, count: usize) -> Result<Vec<Message>, String> {
-        self.store.get(count).await
+        let messages = self.store.get(count).await?;
+        debug!(count = messages.len(), "messages retrieved");
+
+        Ok(messages)
     }
 
     pub async fn stats(&self) -> Result<QueueStats, String> {
@@ -36,21 +46,33 @@ impl MessageService {
     pub async fn delete(&self, ids: Vec<String>) -> Result<(), String> {
         Self::validate_ids(&ids)?;
 
-        self.store.delete(ids).await
+        let count = ids.len();
+        self.store.delete(ids).await?;
+        debug!(count, "messages deleted");
+
+        Ok(())
     }
 
     pub async fn purge(&self) -> Result<(), String> {
-        self.store.purge().await
+        self.store.purge().await?;
+        info!("queue purged");
+
+        Ok(())
     }
 
     pub async fn retry(&self, ids: Vec<String>) -> Result<(), String> {
         Self::validate_ids(&ids)?;
 
-        self.store.retry(ids).await
+        let count = ids.len();
+        self.store.retry(ids).await?;
+        debug!(count, "messages retried");
+
+        Ok(())
     }
 
     fn validate_ids(ids: &Vec<String>) -> Result<(), String> {
         if ids.is_empty() {
+            warn!("no message IDs provided");
             return Err("No message IDs provided".to_string());
         }
 
@@ -63,6 +85,7 @@ impl MessageService {
         }
 
         if !invalid_ids.is_empty() {
+            warn!(ids = ?invalid_ids, "invalid message IDs");
             return Err(format!("Invalid message IDs: {invalid_ids:?}"));
         }
 
