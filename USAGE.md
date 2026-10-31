@@ -74,7 +74,7 @@ The server will start on `http://localhost:1337`. You can verify it's running:
 
 ```bash
 curl http://localhost:1337/hello
-# Returns: "Hello World"
+# Returns: "Hello TLQ v0.5.0 (uptime: 5s)"
 ```
 
 ## Configuration
@@ -254,7 +254,7 @@ Returns current queue statistics:
 
 **GET /hello**
 
-Returns `"Hello World"` to verify server availability.
+Returns `"Hello TLQ v<version> (uptime: <duration>)"` to verify server availability, e.g. `"Hello TLQ v0.5.0 (uptime: 1d 2h 3m 4s)"`.
 
 ## Message Processing Pattern
 
@@ -464,7 +464,7 @@ func main() {
 ```bash
 # Check server health
 curl http://localhost:1337/hello
-# Returns: "Hello World"
+# Returns: "Hello TLQ v0.5.0 (uptime: 5s)"
 
 # Purge all messages (use with caution!)
 curl -X POST localhost:1337/purge \
