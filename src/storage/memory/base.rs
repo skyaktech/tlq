@@ -53,11 +53,14 @@ impl BaseMemoryStorage {
         })
     }
 
-    pub(crate) async fn delete(&mut self, ids: Vec<String>) -> Result<(), String> {
+    pub(crate) async fn delete(&mut self, ids: Vec<String>) -> Result<usize, String> {
+        let mut deleted = 0;
         for id in ids {
-            self.processing.remove(&id);
+            if self.processing.remove(&id).is_some() {
+                deleted += 1;
+            }
         }
-        Ok(())
+        Ok(deleted)
     }
 
     pub(crate) async fn purge(&mut self) -> Result<(), String> {
@@ -67,7 +70,7 @@ impl BaseMemoryStorage {
         Ok(())
     }
 
-    pub(crate) async fn retry(&mut self, ids: Vec<String>) -> Result<(), String> {
+    pub(crate) async fn retry(&mut self, ids: Vec<String>) -> Result<usize, String> {
         let mut retried_messages = Vec::new();
 
         for id in &ids {
@@ -80,9 +83,10 @@ impl BaseMemoryStorage {
             }
         }
 
+        let retried = retried_messages.len();
         self.queue.extend(retried_messages);
 
-        Ok(())
+        Ok(retried)
     }
 
     pub(crate) fn collect_expired(&self, max_retries: u32) -> (Vec<String>, Vec<String>) {
@@ -110,10 +114,8 @@ impl BaseMemoryStorage {
         to_retry: Vec<String>,
         to_remove: Vec<String>,
     ) -> Result<ReapResult, String> {
-        let retried = to_retry.len();
-        let dead = to_remove.len();
-        self.retry(to_retry).await?;
-        self.delete(to_remove).await?;
+        let retried = self.retry(to_retry).await?;
+        let dead = self.delete(to_remove).await?;
         self.dead_count += dead;
         Ok(ReapResult { retried, dead })
     }
@@ -183,10 +185,11 @@ mod tests {
         let mut storage = setup_storage();
 
         let messages = storage.get(2).await.unwrap();
-        storage
+        let deleted = storage
             .delete(vec![messages[0].id.to_string(), messages[1].id.to_string()])
             .await
             .unwrap();
+        assert_eq!(deleted, 2);
         assert_eq!(storage.processing.len(), 0);
     }
 
@@ -195,10 +198,11 @@ mod tests {
         let mut storage = setup_storage();
 
         let _messages = storage.get(2).await.unwrap();
-        storage
+        let deleted = storage
             .delete(vec!["non-existent-id".to_string()])
             .await
             .unwrap();
+        assert_eq!(deleted, 0);
         assert_eq!(storage.processing.len(), 2);
     }
 
@@ -207,10 +211,11 @@ mod tests {
         let mut storage = setup_storage();
 
         let messages = storage.get(2).await.unwrap();
-        storage
+        let deleted = storage
             .delete(vec![messages[0].id.to_string(), messages[0].id.to_string()])
             .await
             .unwrap();
+        assert_eq!(deleted, 1);
         assert_eq!(storage.processing.len(), 1);
     }
 
@@ -228,11 +233,15 @@ mod tests {
     async fn test_base_memory_storage_retry() {
         let mut storage = setup_storage();
         let messages = storage.get(2).await.unwrap();
-        storage
-            .retry(vec![messages[0].id.to_string()])
+        let retried = storage
+            .retry(vec![
+                messages[0].id.to_string(),
+                "non-existent-id".to_string(),
+            ])
             .await
             .unwrap();
 
+        assert_eq!(retried, 1);
         assert_eq!(storage.queue.len(), 2);
         assert_eq!(storage.processing.len(), 1);
     }

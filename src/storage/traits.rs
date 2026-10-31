@@ -5,9 +5,9 @@ use async_trait::async_trait;
 pub trait Storage: Send + Sync {
     async fn add(&self, msg: Message) -> Result<(), String>;
     async fn get(&self, count: usize) -> Result<Vec<Message>, String>;
-    async fn delete(&self, ids: Vec<String>) -> Result<(), String>;
+    async fn delete(&self, ids: Vec<String>) -> Result<usize, String>;
     async fn purge(&self) -> Result<(), String>;
-    async fn retry(&self, ids: Vec<String>) -> Result<(), String>;
+    async fn retry(&self, ids: Vec<String>) -> Result<usize, String>;
     async fn stats(&self) -> Result<QueueStats, String>;
     async fn reap_expired(&self, max_retries: u32) -> Result<ReapResult, String>;
 }
