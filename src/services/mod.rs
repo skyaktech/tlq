@@ -46,9 +46,9 @@ impl MessageService {
     pub async fn delete(&self, ids: Vec<String>) -> Result<(), String> {
         Self::validate_ids(&ids)?;
 
-        let count = ids.len();
-        self.store.delete(ids).await?;
-        debug!(count, "messages deleted");
+        let requested = ids.len();
+        let count = self.store.delete(ids).await?;
+        debug!(count, requested, "messages deleted");
 
         Ok(())
     }
@@ -63,9 +63,9 @@ impl MessageService {
     pub async fn retry(&self, ids: Vec<String>) -> Result<(), String> {
         Self::validate_ids(&ids)?;
 
-        let count = ids.len();
-        self.store.retry(ids).await?;
-        debug!(count, "messages retried");
+        let requested = ids.len();
+        let count = self.store.retry(ids).await?;
+        debug!(count, requested, "messages retried");
 
         Ok(())
     }
