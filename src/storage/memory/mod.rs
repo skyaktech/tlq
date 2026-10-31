@@ -42,7 +42,7 @@ impl Storage for MemoryStorage {
         storage.stats().await
     }
 
-    async fn delete(&self, ids: Vec<String>) -> Result<(), String> {
+    async fn delete(&self, ids: Vec<String>) -> Result<usize, String> {
         let mut storage = self.inner.lock().await;
         storage.delete(ids).await
     }
@@ -52,7 +52,7 @@ impl Storage for MemoryStorage {
         storage.purge().await
     }
 
-    async fn retry(&self, ids: Vec<String>) -> Result<(), String> {
+    async fn retry(&self, ids: Vec<String>) -> Result<usize, String> {
         let mut storage = self.inner.lock().await;
         storage.retry(ids).await
     }

@@ -17,7 +17,7 @@ path = "tests/mod.rs"
 [dependencies]
 uuid = { version = "1.23", features = ["v7", "serde"] }
 serde = { version = "1.0.228", features = ["derive"] }
-async-trait = "0.1.89"
+async-trait = "0.1.92"
 tokio = { version = "1.52", features = ["full"] }
 axum = "0.8.9"
 skyak_axum_core = "0.3.0"
