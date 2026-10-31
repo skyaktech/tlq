@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-10-31
+### Added
+- App version and uptime in GET /hello health check response
+- HTTP request/response logging middleware
+- Structured logging in the service layer
+
+### Fixed
+- Delete and retry operations now log actual affected counts instead of requested IDs
+
+### Changed
+- Updated dependencies to latest versions
+
 ## [0.4.0] - 2026-03-21
 ### Added
 - GET /stats endpoint returning queue statistics (ready, processing, dead counts)
